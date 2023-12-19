@@ -1,0 +1,7 @@
+{
+    "model_path":{
+        "1.3b": "llm-jp/llm-jp-1.3b-v1.0",
+        "13b": "llm-jp/llm-jp-13b-v1.0"
+    }
+
+}
