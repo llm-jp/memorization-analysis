@@ -19,7 +19,7 @@ parser.add_argument("--model", type=str, default="1.3b")
 parser.add_argument("--steps", type=int, default="1000")
 args = parser.parse_args() 
 
-json_file = open("../settings/settings.json", "r")
+json_file = open("./settings/settings.json", "r")
 json_data = json.load(json_file)
 
 random.seed(42)
@@ -143,14 +143,19 @@ for parent_file_path in parent_path:
                     ppl_tmp.append(tmp)
                     # ppl_tmp.append([obj["iteration"], obj["doc_ids"].split(), results["mean_perplexity"]])
 
-            #1セット後にcsv書き込み
-            print("write csv")
-            print(f"start_iteration = {start_iteration}, end_iteration = {end_iteration}")
-            tmp_iteration_number = -1
-            df = pd.DataFrame(ppl_tmp, index=None, columns=["iteration", "dataset_idx", "doc_ids", "perplexity"])
-            df["doc_ids"] = df["doc_ids"].apply(lambda x: "\n".join(map(str, x)))
-            df.to_csv(f"../result/{date}.csv", mode="a", index=False, header=False, float_format="%.3f", encoding="utf-8_sig")
-            ppl_tmp = []
+    #1セット後にcsv書き込み
+    print("write csv")
+    print(f"{parent_file_path}, {child_file_path}, start_iteration = {start_iteration}, end_iteration = {end_iteration}")
+    tmp_iteration_number = -1
+    df = pd.DataFrame(ppl_tmp, index=None, columns=["iteration", "dataset_idx", "doc_ids", "perplexity"])
+    df["doc_ids"] = df["doc_ids"].apply(lambda x: "\n".join(map(str, x)))
+    df.sort_values(by="iteration", inplace=True)
+    if args.model == "1.3b":
+        file_name_model = "1_3b"
+    elif args.model == "13b":
+        file_name_model = "13b"
+    df.to_csv(f"./result/{file_name_model}/{date}.csv", mode="a", index=False, header=False, float_format="%.3f", encoding="utf-8_sig")
+    ppl_tmp = []
 
 
 end = time.time()  # 現在時刻（処理完了後）を取得
