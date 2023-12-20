@@ -5,6 +5,10 @@ from pathlib import Path
 from typing import Any, Union
 
 
+FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "refined"]
+LOCAL_RANKS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
+
+
 @dataclass
 class Example:
     iteration: int
