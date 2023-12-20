@@ -2,22 +2,21 @@ import argparse
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--step", type=int, default=1000)
-args = parser.parse_args() 
+args = parser.parse_args()
 
-#ファイルからiterationとpplを読み込む
-#x軸にiteration、y軸にpplをとる
+# ファイルからiterationとpplを読み込む
+# x軸にiteration、y軸にpplをとる
 
 date = datetime.datetime.today()
 
 
-#CSVファイルをUTF-8形式で読み込む
-path_csv = "/home/kajiwara/llm-jp-corpus-wg-search-ppl/result/v1_100.csv" #ファイル名
-df_csv = pd.read_csv(path_csv,encoding = "UTF8")
+# CSVファイルをUTF-8形式で読み込む
+path_csv = "/home/kajiwara/llm-jp-corpus-wg-search-ppl/result/v1_100.csv"  # ファイル名
+df_csv = pd.read_csv(path_csv, encoding="UTF8")
 
 
 df_x = df_csv[df_csv.columns[0]]
@@ -28,10 +27,14 @@ df_xy = pd.merge(df_x, df_y, how="outer", left_index=True, right_index=True)
 df_xy.columns = ["Training Steps", "Perplexity"]
 
 # IterationごとにPerplexityの平均を計算し、新たなデータフレームを作成
-average_perplexity_df = df_xy.groupby("Training Steps")["Perplexity"].mean().reset_index()
+average_perplexity_df = (
+    df_xy.groupby("Training Steps")["Perplexity"].mean().reset_index()
+)
 
 # 新たなデータフレームの表示
-average_perplexity_df = average_perplexity_df[average_perplexity_df["Training Steps"] % args.step== 0]
+average_perplexity_df = average_perplexity_df[
+    average_perplexity_df["Training Steps"] % args.step == 0
+]
 print(average_perplexity_df)
 
 
@@ -39,7 +42,9 @@ fig, ax = plt.subplots()
 # 点をプロットして散布図を作成する
 ax.set_xlim(0, 96656)
 # ax.set_ylim(40, 80)
-ax.scatter(average_perplexity_df["Training Steps"], average_perplexity_df["Perplexity"], s=5)
+ax.scatter(
+    average_perplexity_df["Training Steps"], average_perplexity_df["Perplexity"], s=5
+)
 
 # x軸とy軸のラベルを設定する
 plt.xlabel("Training Steps")
