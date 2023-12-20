@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from src.metrics import perplexity, min_k_percent_probability
+from src.metrics import perplexity, min_k_percent_probability, extractable
 
 
 class TestPerplexity(unittest.TestCase):
@@ -79,3 +79,24 @@ class TestMinKPercentProbability(unittest.TestCase):
         self.assertAlmostEqual(min_k_percent_probabilities[0], 0.0)
         self.assertLess(min_k_percent_probabilities[1], 0.0)
         self.assertLess(min_k_percent_probabilities[2], 0.0)
+
+
+class TestExtractable(unittest.TestCase):
+    def test_extractable(self):
+        output_ids = [
+            [0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1],
+            [0, 0, 1, 1, 1],
+        ]
+        labels = [
+            [0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 1],
+        ]
+        extractables = extractable(
+            torch.tensor(output_ids), torch.tensor(labels)
+        ).tolist()
+        self.assertEqual(len(extractables), 3)
+        self.assertAlmostEqual(extractables[0], 1.0)
+        self.assertAlmostEqual(extractables[1], 1.0)
+        self.assertAlmostEqual(extractables[2], 0.0)

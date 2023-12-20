@@ -45,3 +45,23 @@ def min_k_percent_probability(
     ll = ll[:, :num_k_percent_tokens]
     min_k_percent_probability = ll.sum(1) / num_k_percent_tokens
     return min_k_percent_probability
+
+
+def extractable(
+    output_ids: torch.Tensor,
+    labels: torch.Tensor,
+) -> torch.Tensor:
+    """Calculate Extractable in Carlini et al. (2023).
+
+    Args:
+        output_ids (torch.Tensor): Output IDs of shape (batch_size, sequence_length).
+        labels (torch.Tensor): Labels of shape (batch_size, sequence_length).
+
+    Returns:
+        torch.Tensor: Extractable of shape (batch_size,).
+
+    References:
+        https://openreview.net/forum?id=TatRHT_1cK
+    """
+    extractable = (output_ids == labels).sum(1) == labels.shape[1]
+    return extractable
