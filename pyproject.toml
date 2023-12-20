@@ -1,0 +1,7 @@
+[tool.ruff.lint]
+select = [
+    # Pyflakes
+    "F",
+    # isort
+    "I001"
+]

@@ -1,15 +1,15 @@
 import argparse
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from tqdm import tqdm
-import simplejson as json
-import gzip
-from evaluate import load
-import pandas as pd
-import time
-import random
 import datetime
+import gzip
+import random
+import time
 
+import pandas as pd
+import simplejson as json
+import torch
+from evaluate import load
+from tqdm import tqdm
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="1.3b")

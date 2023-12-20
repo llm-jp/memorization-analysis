@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from src.metrics import perplexity, min_k_percent_probability, extractable
+from src.metrics import extractable, min_k_percent_probability, perplexity
 
 
 class TestPerplexity(unittest.TestCase):
