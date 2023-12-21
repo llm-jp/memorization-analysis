@@ -3,8 +3,9 @@ import logging
 from collections import defaultdict
 from pathlib import Path
 
+import torch
 import tqdm
-from transformers import AutoModel
+from transformers import AutoModel, PreTrainedModel
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,19 @@ def parse_args() -> argparse.Namespace:
         help="Whether to print debug messages.",
     )
     return parser.parse_args()
+
+
+def logits(model: PreTrainedModel, input_ids: torch.Tensor) -> torch.Tensor:
+    """Calculate logits for each token.
+
+    Args:
+        model (PreTrainedModel): The language model.
+        input_ids (torch.Tensor): Input IDs of shape (batch_size, sequence_length).
+
+    Returns:
+        torch.Tensor: Logits of shape (batch_size, sequence_length, vocab_size).
+    """
+    return model(input_ids).logits
 
 
 def main(args: argparse.Namespace) -> None:
