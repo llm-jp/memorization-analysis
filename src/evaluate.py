@@ -15,6 +15,9 @@ def main(args: argparse.Namespace) -> None:
 
     for fold in FOLDS:
         step_examples_map = defaultdict(list)
+        logger.info(
+            f"Load example until the number reaches {args.num_examples_per_step} for each step."
+        )
         for local_rank in LOCAL_RANKS:
             data_file = (
                 data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
@@ -32,6 +35,11 @@ def main(args: argparse.Namespace) -> None:
                     "examples for each step, so skip loading the rest."
                 )
                 break
+
+        logger.info(f"Sample {args.num_examples_per_step} examples for each step.")
+        for step, examples in tqdm.tqdm(step_examples_map.items()):
+            step_examples_map[step] = examples[: args.num_examples_per_step]
+
         return
 
 
