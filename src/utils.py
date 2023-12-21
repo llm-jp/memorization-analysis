@@ -18,7 +18,7 @@ class Example:
     token_ids: list[int]
 
 
-def load_file(path: Union[str, Path]) -> list[Example]:
+def load_examples(path: Union[str, Path]) -> list[Example]:
     """Load a file containing examples in JSON format.
 
     Args:

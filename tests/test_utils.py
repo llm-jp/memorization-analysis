@@ -4,7 +4,7 @@ import json
 import tempfile
 import unittest
 
-from src.utils import Example, load_file
+from src.utils import Example, load_examples
 
 
 class TestExample(unittest.TestCase):
@@ -42,8 +42,8 @@ class TestExample(unittest.TestCase):
         self.assertEqual(example.token_ids, [0])
 
 
-class TestLoadFile(unittest.TestCase):
-    def test_load_file(self):
+class TestLoadExamples(unittest.TestCase):
+    def test_load_examples(self):
         example = Example(
             iteration=0,
             dataset_idx=0,
@@ -58,7 +58,7 @@ class TestLoadFile(unittest.TestCase):
                 f.write(json.dumps(dataclasses.asdict(example)) + "\n")
                 f.write(json.dumps(dataclasses.asdict(example)) + "\n")
             temp.seek(0)
-            examples = load_file(temp.name)
+            examples = load_examples(temp.name)
             self.assertEqual(len(examples), 3)
             self.assertEqual(examples[0].iteration, 0)
             self.assertEqual(examples[0].dataset_idx, 0)
