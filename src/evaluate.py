@@ -25,8 +25,9 @@ def main() -> None:
             data_file = (
                 data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
             )
+            logger.info(f"Load examples from {data_file}.")
             step_examples_map = load_examples(data_file)
-            logger.info(f"Loaded {len(step_examples_map)} steps from {data_file}.")
+            logger.debug(f"Loaded examples of {len(step_examples_map)} steps.")
             return
 
 
