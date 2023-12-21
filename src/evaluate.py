@@ -7,16 +7,7 @@ from utils import FOLDS, LOCAL_RANKS, load_examples
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--data_dir",
-        type=str,
-        required=True,
-        help="The directory containing data files.",
-    )
-    args = parser.parse_args()
-
+def main(args: argparse.Namespace) -> None:
     logger.info(f"Data directory: {args.data_dir}")
     data_dir = Path(args.data_dir)
 
@@ -32,8 +23,23 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--data_dir",
+        type=str,
+        required=True,
+        help="The directory containing data files.",
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Whether to print debug messages.",
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(name)s:%(lineno)d: %(levelname)s: %(message)s",
     )
-    main()
+    main(args)
