@@ -33,7 +33,7 @@ class TestExample(unittest.TestCase):
             "text": "test",
             "token_ids": [0],
         }
-        example = Example.from_json(json_obj)
+        example = Example(**json_obj)
         self.assertEqual(example.iteration, 0)
         self.assertEqual(example.dataset_idx, 0)
         self.assertEqual(example.dataset_name, "test")
