@@ -1,8 +1,8 @@
 import argparse
 import datetime
-import pandas as pd
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
+import pandas as pd
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--step", type=int, default=1000)
