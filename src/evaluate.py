@@ -20,7 +20,8 @@ def main(args: argparse.Namespace) -> None:
             )
             logger.info(f"Load examples from {data_file}.")
             for example in load_examples(data_file):
-                step_examples_map[example.iteration].append(example)
+                if example.iteration % args.interval == 0:
+                    step_examples_map[example.iteration].append(example)
 
             examples = next(iter(step_examples_map.values()))
             logger.info(f"Found {len(examples)} examples for each step.")
@@ -40,6 +41,12 @@ if __name__ == "__main__":
         type=str,
         required=True,
         help="The directory containing data files.",
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=1_000,
+        help="The interval between two steps to sample examples.",
     )
     parser.add_argument(
         "--num_examples_per_step",
