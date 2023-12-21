@@ -1,5 +1,6 @@
 import gzip
 import json
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
@@ -18,14 +19,18 @@ class Example:
     token_ids: list[int]
 
 
-def load_examples(path: Union[str, Path]) -> list[Example]:
+def load_examples(path: Union[str, Path]) -> dict[int, list[Example]]:
     """Load a file containing examples in JSON format.
 
     Args:
         path (Union[str, Path]): Path to the file.
 
     Returns:
-        list[Example]: List of examples.
+        dict[int, list[Example]: A mapping from iteration to a list of examples.
     """
+    step_examples_map = defaultdict(list)
     with gzip.open(path, "rt") as f:
-        return [Example(**json.loads(line)) for line in f]
+        for line in f:
+            example = Example(**json.loads(line))
+            step_examples_map[example.iteration].append(example)
+    return step_examples_map
