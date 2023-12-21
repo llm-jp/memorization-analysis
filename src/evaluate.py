@@ -1,5 +1,6 @@
 import argparse
 import logging
+from collections import defaultdict
 from pathlib import Path
 
 from utils import FOLDS, LOCAL_RANKS, load_examples
@@ -12,14 +13,24 @@ def main(args: argparse.Namespace) -> None:
     data_dir = Path(args.data_dir)
 
     for fold in FOLDS:
+        step_examples_map = defaultdict(list)
         for local_rank in LOCAL_RANKS:
             data_file = (
                 data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
             )
             logger.info(f"Load examples from {data_file}.")
-            step_examples_map = load_examples(data_file)
-            logger.debug(f"Loaded examples of {len(step_examples_map)} steps.")
-            return
+            for example in load_examples(data_file):
+                step_examples_map[example.iteration].append(example)
+
+            examples = next(iter(step_examples_map.values()))
+            logger.info(f"Found {len(examples)} examples for each step.")
+            if len(examples) >= args.num_examples_per_step:
+                logger.info(
+                    f"Found enough examples to sample {args.num_examples_per_step} "
+                    "examples for each step, so skip loading the rest."
+                )
+                break
+        return
 
 
 if __name__ == "__main__":
@@ -29,6 +40,12 @@ if __name__ == "__main__":
         type=str,
         required=True,
         help="The directory containing data files.",
+    )
+    parser.add_argument(
+        "--num_examples_per_step",
+        type=int,
+        default=128,
+        help="The number of examples to sample for each step.",
     )
     parser.add_argument(
         "--verbose",
