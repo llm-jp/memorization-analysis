@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import tqdm
+from transformers import AutoModel
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,12 @@ def parse_args() -> argparse.Namespace:
         help="The number of examples to sample for each step.",
     )
     parser.add_argument(
+        "--model_name_or_path",
+        type=str,
+        default="llm-jp/llm-jp-1.3b-v1.0",
+        help="The model name or path for the language model.",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -44,14 +51,16 @@ def parse_args() -> argparse.Namespace:
 
 
 def main(args: argparse.Namespace) -> None:
-    logger.info(f"Data directory: {args.data_dir}")
+    logger.info(f"Load model from {args.model_name_or_path}")
+    model = AutoModel.from_pretrained(args.model_name_or_path)
+    model.eval()
+    logger.debug(model)
+
+    logger.info(f"Load data from {args.data_dir}")
     data_dir = Path(args.data_dir)
 
     for fold in FOLDS:
         step_examples_map = defaultdict(list)
-        logger.info(
-            f"Load example until the number reaches {args.num_examples_per_step} for each step."
-        )
         for local_rank in LOCAL_RANKS:
             data_file = (
                 data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
