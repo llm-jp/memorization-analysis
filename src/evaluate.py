@@ -9,6 +9,40 @@ from utils import FOLDS, LOCAL_RANKS, load_examples
 logger = logging.getLogger(__name__)
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--data_dir",
+        type=str,
+        required=True,
+        help="The directory containing data files.",
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=1_000,
+        help="The interval between two steps to sample examples.",
+    )
+    parser.add_argument(
+        "--num_examples_per_step",
+        type=int,
+        default=128,
+        help="The number of examples to sample for each step.",
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Whether to print debug messages.",
+    )
+    return parser.parse_args()
+
+
 def main(args: argparse.Namespace) -> None:
     logger.info(f"Data directory: {args.data_dir}")
     data_dir = Path(args.data_dir)
@@ -44,35 +78,11 @@ def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--data_dir",
-        type=str,
-        required=True,
-        help="The directory containing data files.",
-    )
-    parser.add_argument(
-        "--interval",
-        type=int,
-        default=1_000,
-        help="The interval between two steps to sample examples.",
-    )
-    parser.add_argument(
-        "--num_examples_per_step",
-        type=int,
-        default=128,
-        help="The number of examples to sample for each step.",
-    )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Whether to print debug messages.",
-    )
-    args = parser.parse_args()
+    args = parse_args()
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(name)s:%(lineno)d: %(levelname)s: %(message)s",
     )
+
     main(args)
