@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from pathlib import Path
 
+import tqdm
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ def main(args: argparse.Namespace) -> None:
                 data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
             )
             logger.info(f"Load examples from {data_file}.")
-            for example in load_examples(data_file):
+            for example in tqdm.tqdm(load_examples(data_file)):
                 if example.iteration % args.interval == 0:
                     step_examples_map[example.iteration].append(example)
 
