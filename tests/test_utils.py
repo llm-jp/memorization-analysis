@@ -3,6 +3,7 @@ import gzip
 import json
 import tempfile
 import unittest
+from collections import defaultdict
 
 from src.utils import Example, load_examples
 
@@ -41,7 +42,10 @@ class TestLoadExamples(unittest.TestCase):
                 f.write(json.dumps(dataclasses.asdict(example)) + "\n")
                 f.write(json.dumps(dataclasses.asdict(example)) + "\n")
             temp.seek(0)
-            step_examples_map = load_examples(temp.name)
+
+            step_examples_map = defaultdict(list)
+            for example in load_examples(temp.name):
+                step_examples_map[example.iteration].append(example)
             self.assertEqual(len(step_examples_map), 1)
             self.assertEqual(len(step_examples_map[0]), 3)
             self.assertEqual(step_examples_map[0][0].iteration, 0)

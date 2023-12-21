@@ -1,11 +1,8 @@
 import gzip
 import json
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
-
-from tqdm import tqdm
+from typing import Iterator, Union
 
 FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "refined"]
 LOCAL_RANKS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
@@ -21,18 +18,15 @@ class Example:
     token_ids: list[int]
 
 
-def load_examples(path: Union[str, Path]) -> dict[int, list[Example]]:
+def load_examples(path: Union[str, Path]) -> Iterator[Example]:
     """Load a file containing examples in JSON format.
 
     Args:
         path (Union[str, Path]): Path to the file.
 
-    Returns:
-        dict[int, list[Example]: A mapping from iteration to a list of examples.
+    Yields:
+        Iterator[Example]: An iterator over the examples.
     """
-    step_examples_map = defaultdict(list)
     with gzip.open(path, "rt") as f:
-        for line in tqdm(f):
-            example = Example(**json.loads(line))
-            step_examples_map[example.iteration].append(example)
-    return step_examples_map
+        for line in f:
+            yield Example(**json.loads(line))
