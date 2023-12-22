@@ -114,11 +114,11 @@ def main(args: argparse.Namespace) -> None:
             step_examples_map[step] = examples[: args.num_examples_per_step]
 
         logger.info("Calculate memorization metrics for each step.")
-        metrics = []
         for step, examples in tqdm.tqdm(step_examples_map.items()):
             input_ids = torch.tensor([e.token_ids for e in examples])[..., :-1]
             labels = torch.tensor([e.token_ids for e in examples])[..., 1:]
             for i in range(1, len(examples), args.batch_size):
+                batch_examples = examples[i : i + args.batch_size]
                 batch_input_ids = input_ids[i : i + args.batch_size]
                 batch_labels = labels[i : i + args.batch_size]
 
@@ -127,8 +127,14 @@ def main(args: argparse.Namespace) -> None:
 
                 batch_logits = logits(model, batch_input_ids)
                 batch_perplexity = perplexity(batch_logits, batch_labels)
-                metrics.extend(batch_perplexity.tolist())
-        print(sum(metrics) / len(metrics), min(metrics), max(metrics))
+                for example, perplexity_ in zip(batch_examples, batch_perplexity):
+                    example.metrics["perplexity"] = perplexity_
+
+            for metric_key in ["perplexity"]:
+                metrics = [e.metrics[metric_key] for e in examples]
+                logger.info(
+                    f"Step {step}: {metric_key} = {sum(metrics) / len(metrics)}"
+                )
         return
 
 
