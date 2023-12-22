@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from src.metrics import extractable, min_k_percent_probability, perplexity
+from src.metrics import extractable, min_k_percent_prob, perplexity
 
 
 class TestPerplexity(unittest.TestCase):
@@ -42,8 +42,8 @@ class TestPerplexity(unittest.TestCase):
         self.assertGreater(perplexities[2], 1.0)
 
 
-class TestMinKPercentProbability(unittest.TestCase):
-    def test_min_k_percent_probability(self):
+class TestMinKPercentProb(unittest.TestCase):
+    def test_min_k_percent_prob(self):
         logits = [
             [
                 [100.0, -100.0],
@@ -72,13 +72,13 @@ class TestMinKPercentProbability(unittest.TestCase):
             [1, 1, 1, 1, 1],
             [0, 0, 0, 0, 1],
         ]
-        min_k_percent_probabilities = min_k_percent_probability(
+        min_k_percent_prob_ = min_k_percent_prob(
             torch.tensor(logits), torch.tensor(labels), k=20.0
         ).tolist()
-        self.assertEqual(len(min_k_percent_probabilities), 3)
-        self.assertAlmostEqual(min_k_percent_probabilities[0], 0.0)
-        self.assertLess(min_k_percent_probabilities[1], 0.0)
-        self.assertLess(min_k_percent_probabilities[2], 0.0)
+        self.assertEqual(len(min_k_percent_prob_), 3)
+        self.assertAlmostEqual(min_k_percent_prob_[0], 0.0)
+        self.assertLess(min_k_percent_prob_[1], 0.0)
+        self.assertLess(min_k_percent_prob_[2], 0.0)
 
 
 class TestExtractable(unittest.TestCase):
