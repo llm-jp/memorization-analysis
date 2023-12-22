@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 import tqdm
 from metrics import perplexity
-from transformers import AutoModel, PreTrainedModel
+from transformers import AutoModelForCausalLM, PreTrainedModel
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,6 @@ def logits(model: PreTrainedModel, input_ids: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: Logits of shape (batch_size, sequence_length, vocab_size).
     """
-    input_ids.to(model.device)
     return model(input_ids).logits
 
 
@@ -81,7 +80,7 @@ def main(args: argparse.Namespace) -> None:
             torch_dtype = torch.float16
     else:
         torch_dtype = torch.float32
-    model = AutoModel.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         args.model_name_or_path, device_map="auto", torch_dtype=torch_dtype
     )
     model.eval()
@@ -117,14 +116,15 @@ def main(args: argparse.Namespace) -> None:
         logger.info("Calculate memorization metrics for each step.")
         metrics = []
         for step, examples in tqdm.tqdm(step_examples_map.items()):
+            input_ids = torch.tensor([e.token_ids for e in examples])[..., :-1]
+            labels = torch.tensor([e.token_ids for e in examples])[..., 1:]
             for i in range(1, len(examples), args.batch_size):
-                batch_examples = examples[i : i + args.batch_size]
-                batch_input_ids = torch.tensor(
-                    [example.input_ids for example in batch_examples]
-                )[..., :-1]
-                batch_labels = torch.tensor(
-                    [example.input_ids for example in batch_examples]
-                )[..., 1:]
+                batch_input_ids = input_ids[i : i + args.batch_size]
+                batch_labels = labels[i : i + args.batch_size]
+
+                batch_input_ids = batch_input_ids.to(model.device)
+                batch_labels = batch_labels.to(model.device)
+
                 batch_logits = logits(model, batch_input_ids)
                 batch_perplexity = perplexity(batch_logits, batch_labels)
                 metrics.extend(batch_perplexity.tolist())
