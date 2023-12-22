@@ -5,6 +5,7 @@ from pathlib import Path
 
 import torch
 import tqdm
+from metrics import perplexity
 from transformers import AutoModel, PreTrainedModel
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
@@ -41,6 +42,12 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="llm-jp/llm-jp-1.3b-v1.0",
         help="The model name or path for the language model.",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=1,
+        help="The batch size.",
     )
     parser.add_argument(
         "--verbose",
@@ -97,6 +104,21 @@ def main(args: argparse.Namespace) -> None:
         for step, examples in tqdm.tqdm(step_examples_map.items()):
             step_examples_map[step] = examples[: args.num_examples_per_step]
 
+        logger.info("Calculate memorization metrics for each step.")
+        metrics = []
+        for step, examples in tqdm.tqdm(step_examples_map.items()):
+            for i in range(1, len(examples), args.batch_size):
+                batch_examples = examples[i : i + args.batch_size]
+                batch_input_ids = torch.tensor(
+                    [example.input_ids for example in batch_examples]
+                )[..., :-1]
+                batch_labels = torch.tensor(
+                    [example.input_ids for example in batch_examples]
+                )[..., 1:]
+                batch_logits = logits(model, batch_input_ids)
+                batch_perplexity = perplexity(batch_logits, batch_labels)
+                metrics.extend(batch_perplexity.tolist())
+        print(sum(metrics) / len(metrics), min(metrics), max(metrics))
         return
 
 
