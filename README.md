@@ -4,9 +4,24 @@ This repository contains code to analyze the extent to which LLM-jp models memor
 
 ## Installation
 
+Install the required Python packages:
+
 ```bash
 pip install -r requirements.txt
 ```
+
+## Run evaluation
+
+Calculate memorization metrics for a model:
+
+```bash
+python src/evaluate.py \
+    --data_dir <PATH-TO-DATA-DIR> \
+    --output_dir <PATH-TO-OUTPUT-DIR> \
+    [--verbose]
+```
+
+Use `--help` to see all available options.
 
 ## Development
 
