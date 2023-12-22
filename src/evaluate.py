@@ -139,7 +139,7 @@ def main(args: argparse.Namespace) -> None:
                     for example, min_k_percent_prob_ in zip(
                         batch_examples, batch_min_k_percent_prob.tolist()
                     ):
-                        example.metrics[f"min_{k}_percent_prob"] = min_k_percent_prob_
+                        example.metrics[f"min_k_percent_prob/{k}"] = min_k_percent_prob_
 
                 n = 50  # The number of tokens to complete.
                 for l in [100, 200, 500, 1_000]:  # noqa: E741
@@ -158,7 +158,7 @@ def main(args: argparse.Namespace) -> None:
                     for example, extractable_ in zip(
                         batch_examples, cur_extractable.tolist()
                     ):
-                        example.metrics[f"{l}_extractable"] = extractable_
+                        example.metrics[f"extractable/{l}"] = extractable_
 
             for metric_key in examples[0].metrics:
                 metrics = [e.metrics[metric_key] for e in examples]
