@@ -30,6 +30,12 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="The directory to save the output files.",
     )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Whether to print debug messages.",
+    )
     return parser.parse_args()
 
 
