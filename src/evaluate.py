@@ -34,7 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--interval",
         type=int,
-        default=1_000,
+        default=5_000,
         help="The interval between two steps to sample examples.",
     )
     parser.add_argument(
