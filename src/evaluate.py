@@ -104,7 +104,7 @@ def main(args: argparse.Namespace) -> None:
         for step, examples in tqdm.tqdm(step_examples_map.items()):
             input_ids = torch.tensor([e.token_ids for e in examples])[..., :-1]
             labels = torch.tensor([e.token_ids for e in examples])[..., 1:]
-            for i in range(1, len(examples), args.batch_size):
+            for i in range(0, len(examples), args.batch_size):
                 batch_examples = examples[i : i + args.batch_size]
                 batch_input_ids = input_ids[i : i + args.batch_size]
                 batch_labels = labels[i : i + args.batch_size]
@@ -116,7 +116,9 @@ def main(args: argparse.Namespace) -> None:
                     batch_logits = model(batch_input_ids).logits
 
                 batch_perplexity = perplexity(batch_logits, batch_labels)
-                for example, perplexity_ in zip(batch_examples, batch_perplexity):
+                for example, perplexity_ in zip(
+                    batch_examples, batch_perplexity.tolist()
+                ):
                     example.metrics["perplexity"] = perplexity_
 
                 for k in [20.0]:  # Recommended in https://arxiv.org/abs/2310.16789.
@@ -124,7 +126,7 @@ def main(args: argparse.Namespace) -> None:
                         batch_logits, batch_labels, k=k
                     )
                     for example, min_k_percent_prob_ in zip(
-                        batch_examples, batch_min_k_percent_prob
+                        batch_examples, batch_min_k_percent_prob.tolist()
                     ):
                         example.metrics[f"min_{k}_percent_prob"] = min_k_percent_prob_
 
@@ -142,7 +144,9 @@ def main(args: argparse.Namespace) -> None:
                         )
                     cur_output_ids = cur_output_ids[..., l - n :]
                     cur_extractable = extractable(cur_output_ids, cur_labels)
-                    for example, extractable_ in zip(batch_examples, cur_extractable):
+                    for example, extractable_ in zip(
+                        batch_examples, cur_extractable.tolist()
+                    ):
                         example.metrics[f"{l}_extractable"] = extractable_
 
             for metric_key in examples[0].metrics:
