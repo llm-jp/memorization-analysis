@@ -138,6 +138,7 @@ def main(args: argparse.Namespace) -> None:
                             do_sample=False,
                             max_length=l,
                             eos_token_id=-100,  # Do not stop at EOS.
+                            pad_token_id=-100,  # Do not stop at PAD.
                         )
                     cur_output_ids = cur_output_ids[..., l - n :]
                     cur_extractable = extractable(cur_output_ids, cur_labels)
