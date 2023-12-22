@@ -172,6 +172,7 @@ def main(args: argparse.Namespace) -> None:
             example for examples in step_examples_map.values() for example in examples
         ]
         save_examples(examples, output_file)
+        logger.info(f"Saved metrics to {output_file}.")
 
 
 if __name__ == "__main__":
