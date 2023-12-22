@@ -124,8 +124,8 @@ def main(args: argparse.Namespace) -> None:
 
                 batch_input_ids = batch_input_ids.to(model.device)
                 batch_labels = batch_labels.to(model.device)
-
                 batch_logits = logits(model, batch_input_ids)
+
                 batch_perplexity = perplexity(batch_logits, batch_labels)
                 for example, perplexity_ in zip(batch_examples, batch_perplexity):
                     example.metrics["perplexity"] = perplexity_
