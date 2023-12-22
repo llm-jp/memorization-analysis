@@ -163,7 +163,7 @@ def main(args: argparse.Namespace) -> None:
             for metric_key in examples[0].metrics:
                 metrics = [e.metrics[metric_key] for e in examples]
                 logger.info(
-                    f"Step {step}: {metric_key} = {sum(metrics) / len(metrics)}"
+                    f"Step {step}: {metric_key} = {sum(metrics) / len(metrics):.2f}"
                 )
 
         logger.info("Save metrics.")
