@@ -175,8 +175,8 @@ def plot_extractable(
     fig.add_trace(
         go.Heatmap(
             z=z,
-            x=list(step_examples_map.keys()),
-            y=list(reversed(list(key_l_map.values()))),
+            x=[str(x_i) for x_i in step_examples_map.keys()],
+            y=[str(y_i) for y_i in reversed(list(key_l_map.values()))],
             colorscale="Viridis",
         )
     )
