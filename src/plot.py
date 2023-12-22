@@ -55,11 +55,14 @@ def plot_perplexity(
     for example in examples:
         assert metric_key in example.metrics
         step_examples_map[example.iteration].append(example)
+    step_examples_map = {
+        step: examples for step, examples in sorted(step_examples_map.items())
+    }
 
     x = []
     y = []
     y_std = []
-    for step, examples in sorted(step_examples_map.items()):
+    for step, examples in step_examples_map.items():
         x.append(step)
         perplexity = [example.metrics[metric_key] for example in examples]
         y.append(sum(perplexity) / len(perplexity))
@@ -104,18 +107,22 @@ def plot_min_k_percent_prob(
         if key.startswith(metric_key):
             k = int(key.split("/")[1])
             key_k_map[key] = k
+    key_k_map = {key: k for key, k in sorted(key_k_map.items(), key=lambda x: x[1])}
 
     step_examples_map = defaultdict(list)
     for example in examples:
         assert all(key in example.metrics for key in key_k_map)
         step_examples_map[example.iteration].append(example)
+    step_examples_map = {
+        step: examples for step, examples in sorted(step_examples_map.items())
+    }
 
     fig = go.Figure()
     for key, k in key_k_map.items():
         x = []
         y = []
         y_std = []
-        for step, examples in sorted(step_examples_map.items()):
+        for step, examples in step_examples_map.items():
             x.append(step)
             min_k_percent_prob = [example.metrics[key] for example in examples]
             y.append(sum(min_k_percent_prob) / len(min_k_percent_prob))
@@ -161,20 +168,24 @@ def plot_extractable(
         if key.startswith(metric_key):
             l = int(key.split("/")[1])  # noqa: E741
             key_l_map[key] = l
+    key_l_map = {key: l for key, l in sorted(key_l_map.items(), key=lambda x: x[1])}
 
     step_examples_map = defaultdict(list)
     for example in examples:
         assert all(key in example.metrics for key in key_l_map)
         step_examples_map[example.iteration].append(example)
+    step_examples_map = {
+        step: examples for step, examples in sorted(step_examples_map.items())
+    }
 
     z = []
-    for key, l in sorted(key_l_map.items(), key=lambda x: x[1], reverse=True):
+    for key, l in key_l_map.items():
         row = []
-        for step, examples in sorted(step_examples_map.items()):
-            extractable_frac = sum(
-                [example.metrics[key] for example in examples]
-            ) / len(examples)
-            row.append(extractable_frac)
+        for step, examples in step_examples_map.items():
+            extractable = sum([example.metrics[key] for example in examples]) / len(
+                examples
+            )
+            row.append(extractable)
         z.append(row)
 
     fig = go.Figure()
@@ -182,8 +193,7 @@ def plot_extractable(
         go.Heatmap(
             z=z,
             x=[str(x_i) for x_i in step_examples_map.keys()],
-            y=[str(y_i) for y_i in reversed(list(key_l_map.values()))],
-            colorscale="Viridis",
+            y=[str(y_i) for y_i in key_l_map.values()],
         )
     )
     fig.update_layout(
