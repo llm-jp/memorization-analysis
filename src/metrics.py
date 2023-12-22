@@ -12,10 +12,13 @@ def perplexity(logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: Perplexity of shape (batch_size,).
     """
+    batch_size, sequence_length, vocab_size = logits.shape
+    assert labels.shape == (batch_size, sequence_length)
+
     loss_fct = CrossEntropyLoss(reduction="none")
     cross_entropy = loss_fct(logits.transpose(1, 2), labels)
-    perplexity = torch.exp(cross_entropy.sum(1) / labels.shape[1])
-    return perplexity
+    perplexity_ = torch.exp(cross_entropy.sum(1) / labels.shape[1])
+    return perplexity_
 
 
 def min_k_percent_prob(
@@ -36,6 +39,9 @@ def min_k_percent_prob(
     References:
         https://arxiv.org/abs/2310.16789
     """
+    batch_size, sequence_length, vocab_size = logits.shape
+    assert labels.shape == (batch_size, sequence_length)
+
     ll = torch.log_softmax(logits, dim=2)  # log probabilities
     ll = ll.gather(2, labels.unsqueeze(2)).squeeze(2)  # log probabilities of labels
 
@@ -43,8 +49,8 @@ def min_k_percent_prob(
     assert num_k_percent_tokens > 0, "k is too small"
     ll, _ = torch.sort(ll, dim=1)
     ll = ll[:, :num_k_percent_tokens]
-    min_k_percent_probability = ll.sum(1) / num_k_percent_tokens
-    return min_k_percent_probability
+    min_k_percent_prob_ = ll.sum(1) / num_k_percent_tokens
+    return min_k_percent_prob_
 
 
 def extractable(
@@ -63,5 +69,8 @@ def extractable(
     References:
         https://openreview.net/forum?id=TatRHT_1cK
     """
-    extractable = (output_ids == labels).sum(1) == labels.shape[1]
-    return extractable
+    batch_size, sequence_length = output_ids.shape
+    assert labels.shape == (batch_size, sequence_length)
+
+    extractable_ = (output_ids == labels).sum(1) == labels.shape[1]
+    return extractable_
