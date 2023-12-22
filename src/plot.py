@@ -59,7 +59,7 @@ def plot_perplexity(
     x = []
     y = []
     y_std = []
-    for step, examples in step_examples_map.items():
+    for step, examples in sorted(step_examples_map.items()):
         x.append(step)
         perplexity = [example.metrics[metric_key] for example in examples]
         y.append(sum(perplexity) / len(perplexity))
@@ -115,7 +115,7 @@ def plot_min_k_percent_prob(
         x = []
         y = []
         y_std = []
-        for step, examples in step_examples_map.items():
+        for step, examples in sorted(step_examples_map.items()):
             x.append(step)
             min_k_percent_prob = [example.metrics[key] for example in examples]
             y.append(sum(min_k_percent_prob) / len(min_k_percent_prob))
