@@ -68,12 +68,22 @@ def logits(model: PreTrainedModel, input_ids: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: Logits of shape (batch_size, sequence_length, vocab_size).
     """
+    input_ids.to(model.device)
     return model(input_ids).logits
 
 
 def main(args: argparse.Namespace) -> None:
     logger.info(f"Load model from {args.model_name_or_path}")
-    model = AutoModel.from_pretrained(args.model_name_or_path)
+    if torch.cuda.is_available():
+        if torch.cuda.is_bf16_supported():
+            torch_dtype = torch.bfloat16
+        else:
+            torch_dtype = torch.float16
+    else:
+        torch_dtype = torch.float32
+    model = AutoModel.from_pretrained(
+        args.model_name_or_path, device_map="auto", torch_dtype=torch_dtype
+    )
     model.eval()
     logger.debug(model)
 
