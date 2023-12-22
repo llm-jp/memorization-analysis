@@ -7,4 +7,5 @@ evaluate
 simplejson
 polars==0.19.19
 plotly
+kaleido
 pytest
