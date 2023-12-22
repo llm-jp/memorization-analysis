@@ -7,7 +7,7 @@ import torch
 import tqdm
 from metrics import extractable, min_k_percent_prob, perplexity
 from transformers import AutoModelForCausalLM
-from utils import FOLDS, LOCAL_RANKS, load_examples
+from utils import FOLDS, LOCAL_RANKS, load_examples, save_examples
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,12 @@ def parse_args() -> argparse.Namespace:
         type=str,
         required=True,
         help="The directory containing data files.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        required=True,
+        help="The directory to save the output files.",
     )
     parser.add_argument(
         "--interval",
@@ -75,6 +81,11 @@ def main(args: argparse.Namespace) -> None:
 
     logger.info(f"Load data from {args.data_dir}")
     data_dir = Path(args.data_dir)
+
+    logger.info(f"Create output directory {args.output_dir}")
+    model_name = args.model_name_or_path.split("/")[-1]
+    output_dir = Path(args.output_dir) / model_name
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     for fold in FOLDS:
         step_examples_map = defaultdict(list)
@@ -154,7 +165,13 @@ def main(args: argparse.Namespace) -> None:
                 logger.info(
                     f"Step {step}: {metric_key} = {sum(metrics) / len(metrics)}"
                 )
-        return
+
+        logger.info("Save metrics.")
+        output_file = output_dir / f"metrics_{fold}.jsonl.gz"
+        examples = [
+            example for examples in step_examples_map.values() for example in examples
+        ]
+        save_examples(examples, output_file)
 
 
 if __name__ == "__main__":
