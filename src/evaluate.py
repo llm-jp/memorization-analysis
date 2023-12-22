@@ -132,7 +132,7 @@ def main(args: argparse.Namespace) -> None:
                 ):
                     example.metrics["perplexity"] = perplexity_
 
-                for k in [20]:  # Recommended in https://arxiv.org/abs/2310.16789.
+                for k in [20]:
                     batch_min_k_percent_prob = min_k_percent_prob(
                         batch_logits, batch_labels, k=k
                     )
@@ -142,7 +142,7 @@ def main(args: argparse.Namespace) -> None:
                         example.metrics[f"min_k_percent_prob/{k}"] = min_k_percent_prob_
 
                 n = 50  # The number of tokens to complete.
-                for l in [100, 200, 500, 1_000]:  # noqa: E741
+                for l in [100, 200, 500, 1_000]:  # noqa: E741; The number of tokens.
                     cur_input_ids = batch_input_ids[..., : l - n]
                     cur_labels = batch_input_ids[..., l - n : l]
                     with torch.no_grad():
