@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.plot import plot_min_k_percent_prob, plot_perplexity
+from src.plot import plot_extractable, plot_min_k_percent_prob, plot_perplexity
 from src.utils import Example
 
 
@@ -107,4 +107,62 @@ class TestPlotMinKPercentProb(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = tmpdir + "/min_k_percent_prob.pdf"
             plot_min_k_percent_prob(examples, path)
+            self.assertTrue(Path(path).exists())
+
+
+class TestPlotExtractable(unittest.TestCase):
+    def test_plot_extractable(self):
+        examples = [
+            Example(
+                iteration=0,
+                dataset_idx=0,
+                dataset_name="test",
+                doc_ids=[0],
+                text="test",
+                token_ids=[0],
+                metrics={
+                    "extractable/20": 1.0,
+                    "extractable/30": 11.0,
+                },
+            ),
+            Example(
+                iteration=0,
+                dataset_idx=0,
+                dataset_name="test",
+                doc_ids=[0],
+                text="test",
+                token_ids=[0],
+                metrics={
+                    "extractable/20": 2.0,
+                    "extractable/30": 12.0,
+                },
+            ),
+            Example(
+                iteration=1,
+                dataset_idx=0,
+                dataset_name="test",
+                doc_ids=[0],
+                text="test",
+                token_ids=[0],
+                metrics={
+                    "extractable/20": 2.0,
+                    "extractable/30": 12.0,
+                },
+            ),
+            Example(
+                iteration=1,
+                dataset_idx=0,
+                dataset_name="test",
+                doc_ids=[0],
+                text="test",
+                token_ids=[0],
+                metrics={
+                    "extractable/20": 3.0,
+                    "extractable/30": 13.0,
+                },
+            ),
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = tmpdir + "/extractable.pdf"
+            plot_extractable(examples, path)
             self.assertTrue(Path(path).exists())

@@ -109,3 +109,54 @@ def plot_min_k_percent_prob(
         showlegend=True,
     )
     fig.write_image(str(path))
+
+
+def plot_extractable(
+    examples: list[Example],
+    path: Union[str, Path],
+    metric_key: str = "extractable",
+) -> None:
+    """Plot the extractable fraction of the examples.
+
+    Args:
+        examples (list[Example]): A list of examples.
+        path (Union[str, Path]): Path to the output file.
+        metric_key (str, optional): The metric key to plot. Defaults to "extractable".
+    """
+    example = examples[0]
+    key_l_map = {}
+    for key in example.metrics:
+        if key.startswith(metric_key):
+            l = int(key.split("/")[1])  # noqa: E741
+            key_l_map[key] = l
+
+    step_examples_map = defaultdict(list)
+    for example in examples:
+        assert all(key in example.metrics for key in key_l_map)
+        step_examples_map[example.iteration].append(example)
+
+    z = []
+    for key, l in sorted(key_l_map.items(), key=lambda x: x[1], reverse=True):
+        row = []
+        for step, examples in sorted(step_examples_map.items()):
+            extractable_frac = sum(
+                [example.metrics[key] for example in examples]
+            ) / len(examples)
+            row.append(extractable_frac)
+        z.append(row)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Heatmap(
+            z=z,
+            x=list(step_examples_map.keys()),
+            y=list(reversed(list(key_l_map.values()))),
+            colorscale="Viridis",
+        )
+    )
+    fig.update_layout(
+        title="Extractable fraction change over training steps",
+        xaxis_title="Training steps",
+        yaxis_title="Sequence length",
+    )
+    fig.write_image(str(path))
