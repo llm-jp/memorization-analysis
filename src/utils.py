@@ -1,6 +1,6 @@
 import gzip
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Union
 
@@ -16,6 +16,8 @@ class Example:
     doc_ids: list[int]
     text: str
     token_ids: list[int]
+
+    metrics: dict[str, float] = field(default_factory=dict)
 
 
 def load_examples(path: Union[str, Path]) -> Iterator[Example]:

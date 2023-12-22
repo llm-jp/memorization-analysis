@@ -25,6 +25,36 @@ class TestExample(unittest.TestCase):
         self.assertEqual(example.text, "test")
         self.assertEqual(example.token_ids, [0])
 
+    def test_example_with_metrics(self):
+        example = Example(
+            iteration=0,
+            dataset_idx=0,
+            dataset_name="test",
+            doc_ids=[0],
+            text="test",
+            token_ids=[0],
+            metrics={"perplexity": 1.0},
+        )
+        self.assertEqual(example.iteration, 0)
+        self.assertEqual(example.dataset_idx, 0)
+        self.assertEqual(example.dataset_name, "test")
+        self.assertEqual(example.doc_ids, [0])
+        self.assertEqual(example.text, "test")
+        self.assertEqual(example.token_ids, [0])
+        self.assertEqual(example.metrics, {"perplexity": 1.0})
+
+    def test_set_metrics(self):
+        example = Example(
+            iteration=0,
+            dataset_idx=0,
+            dataset_name="test",
+            doc_ids=[0],
+            text="test",
+            token_ids=[0],
+        )
+        example.metrics["perplexity"] = 1.0
+        self.assertEqual(example.metrics, {"perplexity": 1.0})
+
 
 class TestLoadExamples(unittest.TestCase):
     def test_load_examples(self):
