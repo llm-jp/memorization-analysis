@@ -52,3 +52,60 @@ def plot_perplexity(
         yaxis_title="Perplexity",
     )
     fig.write_image(str(path))
+
+
+def plot_min_k_percent_prob(
+    examples: list[Example],
+    path: Union[str, Path],
+    metric_key: str = "min_k_percent_prob",
+) -> None:
+    """Plot the Min-K% probability of the examples.
+
+    Args:
+        examples (list[Example]): A list of examples.
+        path (Union[str, Path]): Path to the output file.
+        metric_key (str, optional): The metric key to plot. Defaults to "min_k_percent_prob".
+    """
+    example = examples[0]
+    key_k_map = {}
+    for key in example.metrics:
+        if key.startswith(metric_key):
+            k = int(key.split("/")[1])
+            key_k_map[key] = k
+
+    step_examples_map = defaultdict(list)
+    for example in examples:
+        assert all(key in example.metrics for key in key_k_map)
+        step_examples_map[example.iteration].append(example)
+
+    fig = go.Figure()
+    for key, k in key_k_map.items():
+        x = []
+        y = []
+        y_std = []
+        for step, examples in step_examples_map.items():
+            x.append(step)
+            min_k_percent_prob = [example.metrics[key] for example in examples]
+            y.append(sum(min_k_percent_prob) / len(min_k_percent_prob))
+            y_std.append(np.std(min_k_percent_prob))
+
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="lines+markers",
+                name=f"K={k}",
+                error_y={
+                    "type": "data",
+                    "array": y_std,
+                    "visible": True,
+                },
+            )
+        )
+    fig.update_layout(
+        title="Min-K% probability change over training steps",
+        xaxis_title="Training steps",
+        yaxis_title="Min-K% probability",
+        showlegend=True,
+    )
+    fig.write_image(str(path))
