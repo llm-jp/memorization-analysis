@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 import tqdm
-from metrics import min_k_percent_prob, perplexity
+from metrics import extractable, min_k_percent_prob, perplexity
 from transformers import AutoModelForCausalLM
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
@@ -123,10 +123,26 @@ def main(args: argparse.Namespace) -> None:
                     batch_min_k_percent_prob = min_k_percent_prob(
                         batch_logits, batch_labels, k=k
                     )
-                    for example, min_20_percent_prob in zip(
+                    for example, min_k_percent_prob_ in zip(
                         batch_examples, batch_min_k_percent_prob
                     ):
-                        example.metrics[f"min_{k}_percent_prob"] = min_20_percent_prob
+                        example.metrics[f"min_{k}_percent_prob"] = min_k_percent_prob_
+
+                n = 50  # The number of tokens to complete.
+                for l in [100, 200, 500, 1_000]:  # noqa: E741
+                    cur_input_ids = batch_input_ids[..., : l - n]
+                    cur_labels = batch_labels[..., l - n : l]
+                    with torch.no_grad():
+                        cur_output_ids = model.generate(
+                            cur_input_ids,
+                            do_sample=False,
+                            max_length=l,
+                            eos_token_id=-100,  # Do not stop at EOS.
+                        )
+                    cur_output_ids = cur_output_ids[..., l - n :]
+                    cur_extractable = extractable(cur_output_ids, cur_labels)
+                    for example, extractable_ in zip(batch_examples, cur_extractable):
+                        example.metrics[f"{l}_extractable"] = extractable_
 
             for metric_key in examples[0].metrics:
                 metrics = [e.metrics[metric_key] for e in examples]
