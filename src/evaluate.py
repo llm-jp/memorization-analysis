@@ -144,7 +144,7 @@ def main(args: argparse.Namespace) -> None:
                 n = 50  # The number of tokens to complete.
                 for l in [100, 200, 500, 1_000]:  # noqa: E741
                     cur_input_ids = batch_input_ids[..., : l - n]
-                    cur_labels = batch_labels[..., l - n : l]
+                    cur_labels = batch_input_ids[..., l - n : l]
                     with torch.no_grad():
                         cur_output_ids = model.generate(
                             cur_input_ids,
