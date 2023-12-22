@@ -18,7 +18,7 @@ def perplexity(logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     return perplexity
 
 
-def min_k_percent_probability(
+def min_k_percent_prob(
     logits: torch.Tensor,
     labels: torch.Tensor,
     k: float = 20.0,

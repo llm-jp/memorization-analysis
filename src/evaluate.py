@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 import tqdm
-from metrics import perplexity
+from metrics import min_k_percent_prob, perplexity
 from transformers import AutoModelForCausalLM, PreTrainedModel
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
@@ -130,7 +130,16 @@ def main(args: argparse.Namespace) -> None:
                 for example, perplexity_ in zip(batch_examples, batch_perplexity):
                     example.metrics["perplexity"] = perplexity_
 
-            for metric_key in ["perplexity"]:
+                for k in [20.0]:  # Recommended in https://arxiv.org/abs/2310.16789.
+                    batch_min_k_percent_prob = min_k_percent_prob(
+                        batch_logits, batch_labels, k=k
+                    )
+                    for example, min_20_percent_prob in zip(
+                        batch_examples, batch_min_k_percent_prob
+                    ):
+                        example.metrics[f"min_{k}_percent_prob"] = min_20_percent_prob
+
+            for metric_key in examples[0].metrics:
                 metrics = [e.metrics[metric_key] for e in examples]
                 logger.info(
                     f"Step {step}: {metric_key} = {sum(metrics) / len(metrics)}"
