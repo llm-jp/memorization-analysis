@@ -132,7 +132,7 @@ def main(args: argparse.Namespace) -> None:
                 ):
                     example.metrics["perplexity"] = perplexity_
 
-                for k in [20.0]:  # Recommended in https://arxiv.org/abs/2310.16789.
+                for k in [20]:  # Recommended in https://arxiv.org/abs/2310.16789.
                     batch_min_k_percent_prob = min_k_percent_prob(
                         batch_logits, batch_labels, k=k
                     )
@@ -163,7 +163,7 @@ def main(args: argparse.Namespace) -> None:
             for metric_key in examples[0].metrics:
                 metrics = [e.metrics[metric_key] for e in examples]
                 logger.info(
-                    f"Step {step}: {metric_key} = {sum(metrics) / len(metrics):.2f}"
+                    f"Step {step}: {metric_key} = {sum(metrics) / len(metrics):.4f}"
                 )
 
         logger.info("Save metrics.")
