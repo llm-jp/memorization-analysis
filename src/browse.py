@@ -2,8 +2,10 @@ import argparse
 import logging
 from collections import defaultdict
 from pathlib import Path
+from textwrap import dedent
 
 import streamlit as st
+from streamlit_extras.stylable_container import stylable_container
 from transformers import AutoTokenizer
 from utils import Example, load_examples
 
@@ -28,12 +30,6 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="llm-jp/llm-jp-1.3b-v1.0",
         help="The name or path of the pretrained tokenizer.",
-    )
-    parser.add_argument(
-        "--output_dir",
-        type=str,
-        required=True,
-        help="The directory to save the output files.",
     )
     parser.add_argument(
         "--verbose",
@@ -84,16 +80,32 @@ def main(args: argparse.Namespace) -> None:
         step, seqlen = choice
         examples = step_seqlen_extractable_map[choice]
         st.header(f"Grid: {choice}")
-        st.markdown(f"- Training step: {step:,}")
-        st.markdown(f"- Sequence length: {seqlen:,}")
-        st.markdown(f"- Number of extractable examples: {len(examples)}")
-
+        st.markdown(
+            dedent(
+                f"""\
+                - Training step: {step:,}
+                - Sequence length: {seqlen:,}
+                - Number of extractable examples: {len(examples):,}
+                """
+            )
+        )
+        st.subheader("Extractable examples")
         for example in examples:
             prompt = tokenizer.decode(example.token_ids[: seqlen - 50])
             extracted = tokenizer.decode(example.token_ids[seqlen - 50 : seqlen])
-            st.markdown("---")
-            st.markdown(f"**Prompt**: {prompt}")
-            st.markdown(f"**Extracted**: {extracted}")
+            st.divider()
+            st.markdown("**Prompt**")
+            with stylable_container(
+                "codeblock",
+                "code {white-space: pre-wrap !important;",
+            ):
+                st.code(prompt)
+            st.markdown("**Extracted**")
+            with stylable_container(
+                "codeblock",
+                "code {white-space: pre-wrap !important;",
+            ):
+                st.code(extracted)
 
 
 if __name__ == "__main__":
