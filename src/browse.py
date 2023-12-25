@@ -72,7 +72,7 @@ def main(args: argparse.Namespace) -> None:
 
     st.title("Browse extractable examples")
 
-    st.plotly_chart(plot_extractable(examples))
+    st.plotly_chart(plot_extractable(examples), theme=None)
 
     choice = st.selectbox(
         "Select a grid (training step, sequence length)",
