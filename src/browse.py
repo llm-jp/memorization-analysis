@@ -5,6 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import streamlit as st
+from plot import plot_extractable
 from streamlit_extras.stylable_container import stylable_container
 from transformers import AutoTokenizer
 from utils import Example, load_examples
@@ -70,6 +71,8 @@ def main(args: argparse.Namespace) -> None:
     }
 
     st.title("Browse extractable examples")
+
+    st.plotly_chart(plot_extractable(examples))
 
     choice = st.selectbox(
         "Select a grid (training step, sequence length)",
