@@ -9,4 +9,5 @@ polars==0.19.19
 plotly
 kaleido
 streamlit
+streamlit_extras
 pytest
