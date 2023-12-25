@@ -2,7 +2,6 @@ import argparse
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import plotly.graph_objs as go
@@ -41,15 +40,16 @@ def parse_args() -> argparse.Namespace:
 
 def plot_perplexity(
     examples: list[Example],
-    path: Union[str, Path],
     metric_key: str = "perplexity",
-) -> None:
+) -> go.Figure:
     """Plot the perplexity of the examples.
 
     Args:
         examples (list[Example]): A list of examples.
-        path (Union[str, Path]): Path to the output file.
         metric_key (str, optional): The metric key to plot. Defaults to "perplexity".
+
+    Returns:
+        go.Figure: The plotly figure.
     """
     step_examples_map = defaultdict(list)
     for example in examples:
@@ -86,20 +86,21 @@ def plot_perplexity(
         xaxis_title="Training steps",
         yaxis_title="Perplexity",
     )
-    fig.write_image(str(path))
+    return fig
 
 
 def plot_min_k_percent_prob(
     examples: list[Example],
-    path: Union[str, Path],
     metric_key: str = "min_k_percent_prob",
-) -> None:
+) -> go.Figure:
     """Plot the Min-K% probability of the examples.
 
     Args:
         examples (list[Example]): A list of examples.
-        path (Union[str, Path]): Path to the output file.
         metric_key (str, optional): The metric key to plot. Defaults to "min_k_percent_prob".
+
+    Returns:
+        go.Figure: The plotly figure.
     """
     example = examples[0]
     key_k_map = {}
@@ -147,20 +148,21 @@ def plot_min_k_percent_prob(
         yaxis_title="Min-K% probability",
         showlegend=True,
     )
-    fig.write_image(str(path))
+    return fig
 
 
 def plot_extractable(
     examples: list[Example],
-    path: Union[str, Path],
     metric_key: str = "extractable",
-) -> None:
+) -> go.Figure:
     """Plot the extractable fraction of the examples.
 
     Args:
         examples (list[Example]): A list of examples.
-        path (Union[str, Path]): Path to the output file.
         metric_key (str, optional): The metric key to plot. Defaults to "extractable".
+
+    Returns:
+        go.Figure: The plotly figure.
     """
     example = examples[0]
     key_l_map = {}
@@ -201,7 +203,7 @@ def plot_extractable(
         xaxis_title="Training steps",
         yaxis_title="Sequence length",
     )
-    fig.write_image(str(path))
+    return fig
 
 
 def main(args: argparse.Namespace) -> None:
@@ -220,17 +222,20 @@ def main(args: argparse.Namespace) -> None:
 
     logger.info("Plot perplexity.")
     path = output_dir / "perplexity.pdf"
-    plot_perplexity(examples, path)
+    fig = plot_perplexity(examples)
+    fig.write_image(str(path))
     logger.info(f"Saved to {path}.")
 
     logger.info("Plot min-k% probability.")
     path = output_dir / "min_k_percent_prob.pdf"
-    plot_min_k_percent_prob(examples, path)
+    fig = plot_min_k_percent_prob(examples)
+    fig.write_image(str(path))
     logger.info(f"Saved to {path}.")
 
     logger.info("Plot extractable fraction.")
     path = output_dir / "extractable.pdf"
-    plot_extractable(examples, path)
+    fig = plot_extractable(examples)
+    fig.write_image(str(path))
     logger.info(f"Saved to {path}.")
 
 

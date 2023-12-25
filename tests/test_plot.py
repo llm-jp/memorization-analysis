@@ -1,6 +1,4 @@
-import tempfile
 import unittest
-from pathlib import Path
 
 from src.plot import plot_extractable, plot_min_k_percent_prob, plot_perplexity
 from src.utils import Example
@@ -46,10 +44,7 @@ class TestPlotPerplexity(unittest.TestCase):
                 metrics={"perplexity": 3.0},
             ),
         ]
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = tmpdir + "/perplexity.pdf"
-            plot_perplexity(examples, path)
-            self.assertTrue(Path(path).exists())
+        _ = plot_perplexity(examples)
 
 
 class TestPlotMinKPercentProb(unittest.TestCase):
@@ -104,10 +99,7 @@ class TestPlotMinKPercentProb(unittest.TestCase):
                 },
             ),
         ]
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = tmpdir + "/min_k_percent_prob.pdf"
-            plot_min_k_percent_prob(examples, path)
-            self.assertTrue(Path(path).exists())
+        _ = plot_min_k_percent_prob(examples)
 
 
 class TestPlotExtractable(unittest.TestCase):
@@ -162,7 +154,4 @@ class TestPlotExtractable(unittest.TestCase):
                 },
             ),
         ]
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = tmpdir + "/extractable.pdf"
-            plot_extractable(examples, path)
-            self.assertTrue(Path(path).exists())
+        _ = plot_extractable(examples)
