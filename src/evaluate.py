@@ -56,6 +56,13 @@ def parse_args() -> argparse.Namespace:
         help="The batch size.",
     )
     parser.add_argument(
+        "--folds",
+        nargs="+",
+        type=str,
+        required=False,
+        help="The folds to evaluate. If not specified, all folds will be evaluated.",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -87,7 +94,12 @@ def main(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir) / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for fold in FOLDS:
+    if args.folds is None:
+        folds = FOLDS
+    else:
+        folds = args.folds
+
+    for fold in folds:
         step_examples_map = defaultdict(list)
         for local_rank in LOCAL_RANKS:
             data_file = (
