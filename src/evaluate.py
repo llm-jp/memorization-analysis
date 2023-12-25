@@ -63,6 +63,12 @@ def parse_args() -> argparse.Namespace:
         help="The folds to evaluate. If not specified, all folds will be evaluated.",
     )
     parser.add_argument(
+        "--model_name",
+        type=str,
+        required=False,
+        help="The model name used in the output directory.",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -90,7 +96,10 @@ def main(args: argparse.Namespace) -> None:
     data_dir = Path(args.data_dir)
 
     logger.info(f"Create output directory {args.output_dir}")
-    model_name = args.model_name_or_path.split("/")[-1]
+    if args.model_name is None:
+        model_name = args.model_name_or_path.split("/")[-1]
+    else:
+        model_name = args.model_name
     output_dir = Path(args.output_dir) / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
