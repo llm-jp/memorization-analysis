@@ -98,7 +98,6 @@ def main(args: argparse.Namespace) -> None:
             extracted = tokenizer.decode(example.token_ids[seqlen - 50 : seqlen])
             st.divider()
             st.markdown(f"**Source**: {example.dataset_name.split('/')[-1]}")
-            st.markdown(f"**Iteration**: {example.iteration}")
             st.markdown("**Prompt**")
             with stylable_container(
                 "codeblock",
