@@ -58,6 +58,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser_index.set_defaults(handler=index)
 
+    parser_search = subparsers.add_parser("search", parents=[parent_parser])
+    parser_search.add_argument(
+        "--query",
+        type=str,
+        required=True,
+        help="The token ids to search.",
+    )
+    parser_search.set_defaults(handler=search)
+
     parser_count = subparsers.add_parser("count", parents=[parent_parser])
     parser_count.add_argument(
         "--query",
@@ -103,6 +112,27 @@ def index_documents(host: str, index: str, path: Path) -> None:
         except ConnectionTimeout:
             logger.warning("Connection timeout. Retrying.")
             continue
+
+
+def search_documents(host: str, index: str, query: str) -> list[dict]:
+    """Search for documents in an index.
+
+    Args:
+        host (str): The Elasticsearch host.
+        index (str): The name of the Elasticsearch index.
+        query (str): The query to use.
+
+    Returns:
+        list[dict]: The list of documents that match the query.
+    """
+    es = Elasticsearch(host)
+    res = es.search(
+        index=index,
+        body={"query": {"match_phrase": {"text": query}}},
+        size=3,
+        max_concurrent_shard_requests=64,
+    )
+    return res["hits"]["hits"]
 
 
 def count_documents(host: str, index: str, query: str) -> int:
@@ -183,6 +213,18 @@ def index(args: argparse.Namespace) -> None:
     with ProcessPoolExecutor(args.num_workers) as executor:
         for _ in tqdm(executor.map(worker_fn, paths), total=len(paths)):
             pass
+
+
+def search(args: argparse.Namespace) -> None:
+    """Search for documents in an index.
+
+    Args:
+        args (argparse.Namespace): The parsed arguments.
+    """
+    documents = search_documents(args.host, args.index, args.query)
+    for document in documents:
+        print(document["_source"]["text"])
+        print("---")
 
 
 def count(args: argparse.Namespace) -> None:
