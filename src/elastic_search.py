@@ -1,7 +1,14 @@
 import argparse
 import logging
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+from pathlib import Path
+from typing import Iterator
 
-from elasticsearch import Elasticsearch
+from elastic_transport import ConnectionTimeout
+from elasticsearch import Elasticsearch, helpers
+from tqdm import tqdm
+from utils import FOLDS, LOCAL_RANKS, load_examples
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +44,18 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser_index = subparsers.add_parser("index", parents=[parent_parser])
+    parser_index.add_argument(
+        "--data_dir",
+        type=str,
+        required=True,
+        help="The directory containing data files.",
+    )
+    parser_index.add_argument(
+        "--num_workers",
+        type=int,
+        default=1,
+        help="The number of workers to use.",
+    )
     parser_index.set_defaults(handler=index)
 
     args = parser.parse_args()
@@ -45,6 +64,35 @@ def parse_args() -> argparse.Namespace:
         exit(1)
 
     return args
+
+
+def index_documents(es: Elasticsearch, index: str, path: Path) -> None:
+    """Index documents to Elasticsearch.
+
+    Args:
+        es (Elasticsearch): The Elasticsearch client.
+        index (str): The name of the Elasticsearch index.
+        path (list[dict]): The list of documents to index.
+    """
+
+    def actions() -> Iterator[dict]:
+        for example in load_examples(path):
+            yield {
+                "_index": index,
+                "_source": {
+                    "iteration": example.iteration,
+                    "dataset_name": example.dataset_name.split("/")[-1],
+                    "token_ids": example.token_ids,
+                },
+            }
+
+    while True:
+        try:
+            helpers.bulk(es.options(request_timeout=1_200), actions())
+            break
+        except ConnectionTimeout:
+            logger.warning("Connection timeout. Retrying.")
+            continue
 
 
 def index(args: argparse.Namespace) -> None:
@@ -79,6 +127,20 @@ def index(args: argparse.Namespace) -> None:
             },
         },
     )
+
+    paths = []
+    data_dir = Path(args.data_dir)
+    for fold in FOLDS:
+        for local_rank in LOCAL_RANKS:
+            paths.append(
+                data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
+            )
+
+    worker_fn = partial(index_documents, es, args.index)
+
+    with ProcessPoolExecutor(args.num_workers) as executor:
+        for _ in tqdm(executor.map(worker_fn, paths)):
+            pass
 
 
 def main(args: argparse.Namespace) -> None:
