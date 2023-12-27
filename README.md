@@ -2,6 +2,11 @@
 
 This repository contains code to analyze the extent to which LLM-jp models memorize training data.
 
+## Requirements
+
+- Python: 3.10+
+- See [requirements.txt](requirements.txt) for Python package requirements.
+
 ## Installation
 
 Install the required Python packages:
@@ -10,18 +15,25 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
-## Run evaluation
+## Analyzing memorization metrics
 
-Calculate memorization metrics for a model:
+First, calculate the memorization metrics for a model.
 
 ```bash
-python src/evaluate.py \
-    --data_dir <PATH-TO-DATA-DIR> \
-    --output_dir <PATH-TO-OUTPUT-DIR> \
-    [--verbose]
+python src/evaluate.py --data_dir <PATH-TO-DATA-DIR> --output_dir <PATH-TO-OUTPUT-DIR>
 ```
 
-Use `--help` to see all available options.
+Then, plot the memorization metrics.
+
+```bash
+python src/plot.py --data_dir <PATH-TO-DATA-DIR> --output_dir <PATH-TO-OUTPUT-DIR>
+```
+
+To browse the memorization metrics, run the following command and open the URL in a browser.
+
+```bash
+python src/browse.py --data_dir <PATH-TO-DATA-DIR>
+```
 
 ## Development
 
