@@ -61,8 +61,7 @@ def parse_args() -> argparse.Namespace:
     parser_search = subparsers.add_parser("search", parents=[parent_parser])
     parser_search.add_argument(
         "--query",
-        type=int,
-        nargs="+",
+        type=str,
         required=True,
         help="The token ids to search.",
     )
@@ -93,7 +92,7 @@ def index_documents(host: str, index: str, path: Path) -> None:
                 "_source": {
                     "iteration": example.iteration,
                     "dataset_name": example.dataset_name.split("/")[-1],
-                    "token_ids": example.token_ids,
+                    "text": example.text,
                 },
             }
 
@@ -104,6 +103,22 @@ def index_documents(host: str, index: str, path: Path) -> None:
         except ConnectionTimeout:
             logger.warning("Connection timeout. Retrying.")
             continue
+
+
+def count_documents(host: str, index: str, query: str) -> int:
+    """Count the number of documents in an index.
+
+    Args:
+        host (str): The Elasticsearch host.
+        index (str): The name of the Elasticsearch index.
+        query (str): The query to use.
+
+    Returns:
+        int: The number of documents in the index.
+    """
+    es = Elasticsearch(host)
+    res = es.count(index=index, body={"query": {"match_phrase": {"text": query}}})
+    return res["count"]
 
 
 def index(args: argparse.Namespace) -> None:
@@ -133,7 +148,7 @@ def index(args: argparse.Namespace) -> None:
                 "properties": {
                     "iteration": {"type": "integer"},
                     "dataset_name": {"type": "keyword"},
-                    "token_ids": {"type": "integer"},
+                    "text": {"type": "text"},
                 },
             },
         },
@@ -160,14 +175,8 @@ def search(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): The parsed arguments.
     """
-    es = Elasticsearch(args.host)
-
-    query = {"query": {"bool": {"must": [{"term": {"token_ids": args.query}}]}}}
-
-    res = es.search(index=args.index, body=query)
-
-    for hit in res["hits"]["hits"]:
-        print(hit["_source"])
+    num_documents = count_documents(args.host, args.index, args.query)
+    print(f"Found {num_documents} documents that match the query.")
 
 
 def main(args: argparse.Namespace) -> None:
