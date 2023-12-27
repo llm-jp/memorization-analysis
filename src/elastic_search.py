@@ -142,13 +142,29 @@ def index(args: argparse.Namespace) -> None:
     es.indices.create(
         index=args.index,
         body={
-            "settings": {"index": {"number_of_shards": 64, "number_of_replicas": 0}},
+            "settings": {
+                "index": {"number_of_shards": 64, "number_of_replicas": 0},
+                "analysis": {
+                    "analyzer": {
+                        "custom_analyzer": {
+                            "tokenizer": "custom_tokenizer",
+                        },
+                    },
+                    "tokenizer": {
+                        "custom_tokenizer": {
+                            "type": "ngram",
+                            "min_gram": 2,
+                            "max_gram": 3,
+                        },
+                    },
+                },
+            },
             "mappings": {
                 "dynamic": "strict",
                 "properties": {
                     "iteration": {"type": "integer"},
                     "dataset_name": {"type": "keyword"},
-                    "text": {"type": "text"},
+                    "text": {"type": "text", "analyzer": "custom_analyzer"},
                 },
             },
         },
