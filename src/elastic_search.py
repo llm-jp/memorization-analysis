@@ -153,7 +153,7 @@ def index(args: argparse.Namespace) -> None:
                     "tokenizer": {
                         "custom_tokenizer": {
                             "type": "ngram",
-                            "min_gram": 2,
+                            "min_gram": 3,
                             "max_gram": 3,
                         },
                     },
