@@ -23,6 +23,12 @@ def parse_args() -> argparse.Namespace:
         default="http://localhost:9200/",
         help="The Elasticsearch host.",
     )
+    parser.add_argument(
+        "--index",
+        type=str,
+        default="memorization-analysis-dev",
+        help="The name of the Elasticsearch index.",
+    )
     parent_parser.add_argument(
         "--verbose",
         "-v",
