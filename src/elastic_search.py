@@ -58,14 +58,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser_index.set_defaults(handler=index)
 
-    parser_search = subparsers.add_parser("search", parents=[parent_parser])
-    parser_search.add_argument(
+    parser_count = subparsers.add_parser("count", parents=[parent_parser])
+    parser_count.add_argument(
         "--query",
         type=str,
         required=True,
-        help="The token ids to search.",
+        help="The token ids to count.",
     )
-    parser_search.set_defaults(handler=search)
+    parser_count.set_defaults(handler=count)
 
     args = parser.parse_args()
     if not hasattr(args, "handler"):
@@ -185,8 +185,8 @@ def index(args: argparse.Namespace) -> None:
             pass
 
 
-def search(args: argparse.Namespace) -> None:
-    """Search documents in Elasticsearch.
+def count(args: argparse.Namespace) -> None:
+    """Count the number of documents in an index.
 
     Args:
         args (argparse.Namespace): The parsed arguments.
