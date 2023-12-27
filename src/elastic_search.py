@@ -66,14 +66,15 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def index_documents(es: Elasticsearch, index: str, path: Path) -> None:
+def index_documents(host: str, index: str, path: Path) -> None:
     """Index documents to Elasticsearch.
 
     Args:
-        es (Elasticsearch): The Elasticsearch client.
+        host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
         path (list[dict]): The list of documents to index.
     """
+    es = Elasticsearch(host)
 
     def actions() -> Iterator[dict]:
         for example in load_examples(path):
@@ -136,10 +137,10 @@ def index(args: argparse.Namespace) -> None:
                 data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
             )
 
-    worker_fn = partial(index_documents, es, args.index)
+    worker_fn = partial(index_documents, args.host, args.index)
 
     with ProcessPoolExecutor(args.num_workers) as executor:
-        for _ in tqdm(executor.map(worker_fn, paths)):
+        for _ in tqdm(executor.map(worker_fn, paths), total=len(paths)):
             pass
 
 
