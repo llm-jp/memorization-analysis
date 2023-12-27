@@ -58,6 +58,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser_index.set_defaults(handler=index)
 
+    parser_search = subparsers.add_parser("search", parents=[parent_parser])
+    parser_search.add_argument(
+        "--query",
+        type=int,
+        nargs="+",
+        required=True,
+        help="The token ids to search.",
+    )
+    parser_search.set_defaults(handler=search)
+
     args = parser.parse_args()
     if not hasattr(args, "handler"):
         parser.print_help()
@@ -142,6 +152,22 @@ def index(args: argparse.Namespace) -> None:
     with ProcessPoolExecutor(args.num_workers) as executor:
         for _ in tqdm(executor.map(worker_fn, paths), total=len(paths)):
             pass
+
+
+def search(args: argparse.Namespace) -> None:
+    """Search documents in Elasticsearch.
+
+    Args:
+        args (argparse.Namespace): The parsed arguments.
+    """
+    es = Elasticsearch(args.host)
+
+    query = {"query": {"bool": {"must": [{"term": {"token_ids": args.query}}]}}}
+
+    res = es.search(index=args.index, body=query)
+
+    for hit in res["hits"]["hits"]:
+        print(hit["_source"])
 
 
 def main(args: argparse.Namespace) -> None:
