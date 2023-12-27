@@ -20,14 +20,8 @@ def parse_args() -> argparse.Namespace:
     parent_parser.add_argument(
         "--host",
         type=str,
-        default="localhost",
+        default="http://localhost:9200/",
         help="The Elasticsearch host.",
-    )
-    parent_parser.add_argument(
-        "--port",
-        type=int,
-        default=9200,
-        help="The Elasticsearch port.",
     )
     parent_parser.add_argument(
         "--verbose",
@@ -53,7 +47,7 @@ def index(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): The parsed arguments.
     """
-    es = Elasticsearch([{"host": args.host, "port": args.port}])
+    es = Elasticsearch(args.host)
 
     if es.indices.exists(index=args.index):
         inp = input(
