@@ -65,7 +65,20 @@ def index(args: argparse.Namespace) -> None:
             logger.info("Aborting.")
             return
 
-    es.indices.create(index=args.index)
+    es.indices.create(
+        index=args.index,
+        body={
+            "settings": {"index": {"number_of_shards": 64, "number_of_replicas": 0}},
+            "mappings": {
+                "dynamic": "strict",
+                "properties": {
+                    "iteration": {"type": "integer"},
+                    "dataset_name": {"type": "keyword"},
+                    "token_ids": {"type": "integer"},
+                },
+            },
+        },
+    )
 
 
 def main(args: argparse.Namespace) -> None:
