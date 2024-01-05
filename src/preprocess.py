@@ -7,7 +7,7 @@ from pathlib import Path
 
 import tqdm
 from elastic_search import count_documents
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import (
     FOLDS,
     LOCAL_RANKS,
@@ -24,7 +24,7 @@ def get_prefix_frequencies(
     example: Example,
     host: str,
     index: str,
-    tokenizer: AutoTokenizer,
+    tokenizer: PreTrainedTokenizer,
 ) -> dict[int, int]:
     """Assign prefix frequencies to the example.
 
@@ -32,7 +32,7 @@ def get_prefix_frequencies(
         example (Example): The example.
         host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
-        tokenizer (AutoTokenizer): The tokenizer.
+        tokenizer (PreTrainedTokenizer): The tokenizer.
 
     Returns:
         dict[int, int]: The prefix frequencies.
