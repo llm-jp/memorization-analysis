@@ -10,4 +10,5 @@ plotly
 kaleido
 streamlit
 streamlit_extras
+elasticsearch
 pytest
