@@ -8,6 +8,7 @@ from typing import Iterator
 from elastic_transport import ConnectionTimeout
 from elasticsearch import Elasticsearch, helpers
 from tqdm import tqdm
+from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ def parse_args() -> argparse.Namespace:
         default="http://localhost:9200/",
         help="The Elasticsearch host.",
     )
-    parser.add_argument(
+    parent_parser.add_argument(
         "--index",
         type=str,
         default="memorization-analysis-dev",
@@ -49,6 +50,12 @@ def parse_args() -> argparse.Namespace:
         type=str,
         required=True,
         help="The directory containing data files.",
+    )
+    parser.add_argument(
+        "--model_name_or_path",
+        type=str,
+        default="llm-jp/llm-jp-1.3b-v1.0",
+        help="The model name or path for the language model.",
     )
     parser_index.add_argument(
         "--num_workers",
@@ -84,24 +91,28 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def index_documents(host: str, index: str, path: Path) -> None:
+def index_documents(
+    host: str, index: str, tokenizer: PreTrainedTokenizer, path: Path
+) -> None:
     """Index documents to Elasticsearch.
 
     Args:
         host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
+        tokenizer (PreTrainedTokenizer): The tokenizer to use.
         path (list[dict]): The list of documents to index.
     """
     es = Elasticsearch(host)
 
     def actions() -> Iterator[dict]:
         for example in load_examples(path):
+            text = tokenizer.decode(example.token_ids)
             yield {
                 "_index": index,
                 "_source": {
                     "iteration": example.iteration,
                     "dataset_name": example.dataset_name.split("/")[-1],
-                    "text": example.text,
+                    "text": text,
                 },
             }
 
@@ -159,6 +170,8 @@ def index(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): The parsed arguments.
     """
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
+
     es = Elasticsearch(args.host)
 
     if es.indices.exists(index=args.index):
@@ -210,7 +223,7 @@ def index(args: argparse.Namespace) -> None:
                 data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
             )
 
-    worker_fn = partial(index_documents, args.host, args.index)
+    worker_fn = partial(index_documents, args.host, args.index, tokenizer)
 
     with ProcessPoolExecutor(args.num_workers) as executor:
         for _ in tqdm(executor.map(worker_fn, paths), total=len(paths)):
