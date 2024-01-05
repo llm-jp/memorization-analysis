@@ -1,14 +1,48 @@
 import argparse
 import logging
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 from pathlib import Path
 
 import tqdm
 from elastic_search import count_documents
 from transformers import AutoTokenizer
-from utils import FOLDS, LOCAL_RANKS, PREFIX_LENGTHS, load_examples, save_examples
+from utils import (
+    FOLDS,
+    LOCAL_RANKS,
+    PREFIX_LENGTHS,
+    Example,
+    load_examples,
+    save_examples,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def get_prefix_frequencies(
+    example: Example,
+    host: str,
+    index: str,
+    tokenizer: AutoTokenizer,
+) -> dict[int, int]:
+    """Assign prefix frequencies to the example.
+
+    Args:
+        example (Example): The example.
+        host (str): The Elasticsearch host.
+        index (str): The name of the Elasticsearch index.
+        tokenizer (AutoTokenizer): The tokenizer.
+
+    Returns:
+        dict[int, int]: The prefix frequencies.
+    """
+    prefix_frequency = {}
+    for prefix_length in PREFIX_LENGTHS:
+        prefix = tokenizer.decode(example.token_ids[:prefix_length])
+        count = count_documents(host, index, prefix)
+        prefix_frequency[prefix_length] = count
+    return prefix_frequency
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,6 +96,12 @@ def parse_args() -> argparse.Namespace:
         help="The model name or path for the language model.",
     )
     parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=1,
+        help="The number of workers to use.",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -101,14 +141,18 @@ def main(args: argparse.Namespace) -> None:
             logger.info(f"Found {len(examples)} examples for each step.")
 
         logger.info("Count frequencies of the prefix of each example.")
+        worker_fn = partial(
+            get_prefix_frequencies,
+            host=args.host,
+            index=args.index,
+            tokenizer=tokenizer,
+        )
         for examples in tqdm.tqdm(step_examples_map.values()):
-            for example in examples:
-                prefix_frequency = {}
-                for prefix_length in PREFIX_LENGTHS:
-                    prefix = tokenizer.decode(example.token_ids[:prefix_length])
-                    count = count_documents(args.host, args.index, prefix)
-                    prefix_frequency[prefix_length] = count
-                example.prefix_frequencies = prefix_frequency
+            with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
+                for example, prefix_freqnencies in zip(
+                    examples, executor.map(worker_fn, examples)
+                ):
+                    example.prefix_frequencies = prefix_freqnencies
 
         logger.info("Save examples.")
         output_file = output_dir / f"examples_{fold}.jsonl.gz"
