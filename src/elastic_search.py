@@ -137,7 +137,7 @@ def search_documents(host: str, index: str, query: str) -> list[dict]:
         list[dict]: The list of documents that match the query.
     """
     es = Elasticsearch(host)
-    res = es.options(request_timeout=120).search(
+    res = es.options(request_timeout=1_200).search(
         index=index,
         body={"query": {"match_phrase": {"text": query}}},
         size=3,
@@ -158,7 +158,7 @@ def count_documents(host: str, index: str, query: str) -> int:
         int: The number of documents in the index.
     """
     es = Elasticsearch(host)
-    res = es.options(request_timeout=120).count(
+    res = es.options(request_timeout=1_200).count(
         index=index, body={"query": {"match_phrase": {"text": query}}}
     )
     return res["count"]
