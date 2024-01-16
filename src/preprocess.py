@@ -146,6 +146,7 @@ def extract(args: argparse.Namespace) -> None:
 
             logger.info("Save examples.")
             output_file = output_dir / data_file.relative_to(data_dir)
+            output_file.parent.mkdir(parents=True, exist_ok=True)
             save_examples(examples, output_file)
 
 
