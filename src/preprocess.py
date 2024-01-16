@@ -19,86 +19,6 @@ from utils import (
 logger = logging.getLogger(__name__)
 
 
-def extract_examples(
-    path: Path,
-    interval: int,
-) -> list[Example]:
-    """Extract examples from a data file.
-
-    Args:
-        path (Path): The path of the data file.
-        interval (int): The interval between two steps to sample examples.
-
-    Returns:
-        list[Example]: The extracted examples.
-    """
-    examples = []
-    for example in tqdm.tqdm(load_examples(path)):
-        if example.iteration % interval == 0:
-            examples.append(example)
-    return examples
-
-
-def get_prefix_frequencies(
-    example: Example,
-    host: str,
-    index: str,
-    tokenizer: PreTrainedTokenizer,
-) -> dict[int, int]:
-    """Return prefix frequencies to the example.
-
-    Args:
-        example (Example): The example.
-        host (str): The Elasticsearch host.
-        index (str): The name of the Elasticsearch index.
-        tokenizer (PreTrainedTokenizer): The tokenizer.
-
-    Returns:
-        dict[int, int]: The prefix frequencies.
-    """
-    prefix_frequencies = {}
-    for prefix_length in PREFIX_LENGTHS:
-        prefix = tokenizer.decode(example.token_ids[:prefix_length])
-        count = count_documents(host, index, prefix)
-        prefix_frequencies[prefix_length] = count
-    return prefix_frequencies
-
-
-def get_prefix_last_iterations(
-    example: Example,
-    host: str,
-    index: str,
-    tokenizer: PreTrainedTokenizer,
-) -> dict[int, int]:
-    """Return the last iteration of each prefix.
-
-    Args:
-        example (Example): The example.
-        host (str): The Elasticsearch host.
-        index (str): The name of the Elasticsearch index.
-        tokenizer (PreTrainedTokenizer): The tokenizer.
-
-    Returns:
-        dict[int, int]: The last iteration of each prefix.
-    """
-    prefix_last_iterations = {}
-    for prefix_length, count in example.prefix_frequencies.items():
-        if count == 0:
-            prefix_last_iterations[prefix_length] = None
-        elif count == 1:
-            prefix_last_iterations[prefix_length] = example.iteration
-        else:
-            prefix = tokenizer.decode(example.token_ids[:prefix_length])
-            body = {
-                "query": {"match_phrase": {"text": prefix}},
-                "sort": [{"iteration": {"order": "desc"}}],
-            }
-            size = 1
-            res = search_documents(host, index, body, size=size)
-            prefix_last_iterations[prefix_length] = res[0]["_source"]["iteration"]
-    return prefix_last_iterations
-
-
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
@@ -191,6 +111,86 @@ def parse_args() -> argparse.Namespace:
     parser_annotate.set_defaults(handler=annotate)
 
     return parser.parse_args()
+
+
+def extract_examples(
+    path: Path,
+    interval: int,
+) -> list[Example]:
+    """Extract examples from a data file.
+
+    Args:
+        path (Path): The path of the data file.
+        interval (int): The interval between two steps to sample examples.
+
+    Returns:
+        list[Example]: The extracted examples.
+    """
+    examples = []
+    for example in tqdm.tqdm(load_examples(path)):
+        if example.iteration % interval == 0:
+            examples.append(example)
+    return examples
+
+
+def get_prefix_frequencies(
+    example: Example,
+    host: str,
+    index: str,
+    tokenizer: PreTrainedTokenizer,
+) -> dict[int, int]:
+    """Return prefix frequencies to the example.
+
+    Args:
+        example (Example): The example.
+        host (str): The Elasticsearch host.
+        index (str): The name of the Elasticsearch index.
+        tokenizer (PreTrainedTokenizer): The tokenizer.
+
+    Returns:
+        dict[int, int]: The prefix frequencies.
+    """
+    prefix_frequencies = {}
+    for prefix_length in PREFIX_LENGTHS:
+        prefix = tokenizer.decode(example.token_ids[:prefix_length])
+        count = count_documents(host, index, prefix)
+        prefix_frequencies[prefix_length] = count
+    return prefix_frequencies
+
+
+def get_prefix_last_iterations(
+    example: Example,
+    host: str,
+    index: str,
+    tokenizer: PreTrainedTokenizer,
+) -> dict[int, int]:
+    """Return the last iteration of each prefix.
+
+    Args:
+        example (Example): The example.
+        host (str): The Elasticsearch host.
+        index (str): The name of the Elasticsearch index.
+        tokenizer (PreTrainedTokenizer): The tokenizer.
+
+    Returns:
+        dict[int, int]: The last iteration of each prefix.
+    """
+    prefix_last_iterations = {}
+    for prefix_length, count in example.prefix_frequencies.items():
+        if count == 0:
+            prefix_last_iterations[prefix_length] = None
+        elif count == 1:
+            prefix_last_iterations[prefix_length] = example.iteration
+        else:
+            prefix = tokenizer.decode(example.token_ids[:prefix_length])
+            body = {
+                "query": {"match_phrase": {"text": prefix}},
+                "sort": [{"iteration": {"order": "desc"}}],
+            }
+            size = 1
+            res = search_documents(host, index, body, size=size)
+            prefix_last_iterations[prefix_length] = res[0]["_source"]["iteration"]
+    return prefix_last_iterations
 
 
 def extract(args: argparse.Namespace) -> None:
