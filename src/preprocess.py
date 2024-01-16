@@ -148,6 +148,7 @@ def extract(args: argparse.Namespace) -> None:
             output_file = output_dir / data_file.relative_to(data_dir)
             output_file.parent.mkdir(parents=True, exist_ok=True)
             save_examples(examples, output_file)
+            logger.info(f"Saved examples to {output_file}.")
 
 
 def main(args: argparse.Namespace) -> None:
