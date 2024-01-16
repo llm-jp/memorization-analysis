@@ -82,7 +82,7 @@ def main(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir) / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for data_file in data_dir.glob("*.jsonl.gz"):
+    for data_file in data_dir.glob("**/*.jsonl.gz"):
         logger.info(f"Load examples from {data_file}.")
         examples = [example for example in load_examples(data_file)]
         logger.debug(f"Loaded {len(examples)} examples.")
