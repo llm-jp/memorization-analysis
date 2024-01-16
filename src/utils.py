@@ -4,8 +4,12 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Union
 
-FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "refined"]
+# FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "refined"]
+FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09"]
 LOCAL_RANKS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
+
+PREFIX_LENGTHS = [100, 200, 500, 1_000]
+COMPLETION_LENGTH = 50
 
 
 @dataclass
@@ -17,6 +21,8 @@ class Example:
     text: str
     token_ids: list[int]
 
+    prefix_frequencies: dict[int, int] = field(default_factory=dict)
+    prefix_last_iterations: dict[int, int] = field(default_factory=dict)
     metrics: dict[str, float] = field(default_factory=dict)
 
 
