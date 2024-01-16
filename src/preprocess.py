@@ -162,7 +162,7 @@ def parse_args() -> argparse.Namespace:
         default=1,
         help="The number of workers to use.",
     )
-    parser_annotate.add_argument(handler=annotate)
+    parser_annotate.set_defaults(handler=annotate)
 
     return parser.parse_args()
 
