@@ -125,23 +125,23 @@ def index_documents(
             continue
 
 
-def search_documents(host: str, index: str, query: str) -> list[dict]:
+def search_documents(host: str, index: str, query: str, **kwargs) -> list[dict]:
     """Search for documents in an index.
 
     Args:
         host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
         query (str): The query to use.
+        **kwargs: Additional keyword arguments.
 
     Returns:
         list[dict]: The list of documents that match the query.
     """
     es = Elasticsearch(host)
-    res = es.options(request_timeout=1_200).search(
+    res = es.options(request_timeout=2_400).search(
         index=index,
         body={"query": {"match_phrase": {"text": query}}},
-        size=3,
-        max_concurrent_shard_requests=64,
+        **kwargs,
     )
     return res["hits"]["hits"]
 
@@ -158,7 +158,7 @@ def count_documents(host: str, index: str, query: str) -> int:
         int: The number of documents in the index.
     """
     es = Elasticsearch(host)
-    res = es.options(request_timeout=1_200).count(
+    res = es.options(request_timeout=2_400).count(
         index=index, body={"query": {"match_phrase": {"text": query}}}
     )
     return res["count"]
@@ -236,7 +236,7 @@ def search(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): The parsed arguments.
     """
-    documents = search_documents(args.host, args.index, args.query)
+    documents = search_documents(args.host, args.index, args.query, size=3)
     for document in documents:
         print(document["_source"]["text"])
         print("---")
