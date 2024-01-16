@@ -5,7 +5,7 @@ from functools import partial
 from pathlib import Path
 
 import tqdm
-from elastic_search import count_documents
+from elastic_search import count_documents, search_documents
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import (
     FOLDS,
@@ -25,7 +25,7 @@ def get_prefix_frequencies(
     index: str,
     tokenizer: PreTrainedTokenizer,
 ) -> dict[int, int]:
-    """Assign prefix frequencies to the example.
+    """Return prefix frequencies to the example.
 
     Args:
         example (Example): The example.
@@ -36,12 +36,47 @@ def get_prefix_frequencies(
     Returns:
         dict[int, int]: The prefix frequencies.
     """
-    prefix_frequency = {}
+    prefix_frequencies = {}
     for prefix_length in PREFIX_LENGTHS:
         prefix = tokenizer.decode(example.token_ids[:prefix_length])
         count = count_documents(host, index, prefix)
-        prefix_frequency[prefix_length] = count
-    return prefix_frequency
+        prefix_frequencies[prefix_length] = count
+    return prefix_frequencies
+
+
+def get_prefix_last_iterations(
+    example: Example,
+    host: str,
+    index: str,
+    tokenizer: PreTrainedTokenizer,
+) -> dict[int, int]:
+    """Return the last iteration of each prefix.
+
+    Args:
+        example (Example): The example.
+        host (str): The Elasticsearch host.
+        index (str): The name of the Elasticsearch index.
+        tokenizer (PreTrainedTokenizer): The tokenizer.
+
+    Returns:
+        dict[int, int]: The last iteration of each prefix.
+    """
+    prefix_last_iterations = {}
+    for prefix_length, count in example.prefix_frequencies.items():
+        if count == 0:
+            prefix_last_iterations[prefix_length] = None
+        elif count == 1:
+            prefix_last_iterations[prefix_length] = example.iteration
+        else:
+            prefix = tokenizer.decode(example.token_ids[:prefix_length])
+            body = {
+                "query": {"match_phrase": {"text": prefix}},
+                "sort": [{"iteration": {"order": "desc"}}],
+            }
+            size = 1
+            res = search_documents(host, index, body, size=size)
+            prefix_last_iterations[prefix_length] = res[0]["_source"]["iteration"]
+    return prefix_last_iterations
 
 
 def parse_args() -> argparse.Namespace:
@@ -190,6 +225,17 @@ def annotate(args: argparse.Namespace) -> None:
                 examples, executor.map(worker_fn, examples)
             ):
                 example.prefix_frequencies = frequencies
+
+        logger.info("Find the last iteration of each prefix.")
+        worker_fn = partial(
+            get_prefix_last_iterations,
+            host=args.host,
+            index=args.index,
+            tokenizer=tokenizer,
+        )
+        with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
+            for example, iterations in zip(examples, executor.map(worker_fn, examples)):
+                example.prefix_last_iterations = iterations
 
         logger.info("Save examples.")
         output_file = output_dir / path.relative_to(data_dir)
