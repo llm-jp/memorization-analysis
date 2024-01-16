@@ -184,9 +184,12 @@ def plot_extractable(
     for key, l in key_l_map.items():
         row = []
         for step, examples in step_examples_map.items():
-            extractable = sum([example.metrics[key] for example in examples]) / len(
-                examples
-            )
+            # Only use examples that no longer appear in the future steps.
+            examples = [e for e in examples if e.prefix_last_iterations[l] == step]
+            if examples:
+                extractable = sum([e.metrics[key] for e in examples]) / len(examples)
+            else:
+                extractable = 0.0  # TODO: Use NaN
             row.append(extractable)
         z.append(row)
 
