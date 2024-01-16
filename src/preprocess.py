@@ -19,6 +19,26 @@ from utils import (
 logger = logging.getLogger(__name__)
 
 
+def extract_examples(
+    path: Path,
+    interval: int,
+) -> list[Example]:
+    """Extract examples from a data file.
+
+    Args:
+        path (Path): The path of the data file.
+        interval (int): The interval between two steps to sample examples.
+
+    Returns:
+        list[Example]: The extracted examples.
+    """
+    examples = []
+    for example in tqdm.tqdm(load_examples(path)):
+        if example.iteration % interval == 0:
+            examples.append(example)
+    return examples
+
+
 def get_prefix_frequencies(
     example: Example,
     host: str,
@@ -123,6 +143,12 @@ def parse_args() -> argparse.Namespace:
         required=False,
         help="The folds to evaluate. If not specified, all folds will be evaluated.",
     )
+    parser_extract.add_argument(
+        "--num_workers",
+        type=int,
+        default=1,
+        help="The number of workers to use.",
+    )
     parser_extract.set_defaults(handler=extract)
 
     parser_annotate = subparsers.add_parser("annotate", parents=[parent_parser])
@@ -180,17 +206,20 @@ def extract(args: argparse.Namespace) -> None:
     else:
         folds = args.folds
 
+    data_files = []
     for fold in folds:
         for local_rank in LOCAL_RANKS:
-            examples = []
-            data_file = (
+            data_files.append(
                 data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
             )
-            logger.info(f"Load examples from {data_file}.")
-            for example in tqdm.tqdm(load_examples(data_file)):
-                if example.iteration % args.interval == 0:
-                    examples.append(example)
 
+    logger.info("Extract examples.")
+    worker_fn = partial(extract_examples, interval=args.interval)
+    with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
+        for data_file, examples in zip(
+            data_files,
+            executor.map(worker_fn, data_files),
+        ):
             logger.info("Save examples.")
             output_file = output_dir / data_file.relative_to(data_dir)
             output_file.parent.mkdir(parents=True, exist_ok=True)
