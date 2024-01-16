@@ -4,7 +4,6 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 
-import tqdm
 from elastic_search import count_documents, search_documents
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import (
@@ -127,7 +126,7 @@ def extract_examples(
         list[Example]: The extracted examples.
     """
     examples = []
-    for example in tqdm.tqdm(load_examples(path)):
+    for example in load_examples(path):
         if example.iteration % interval == 0:
             examples.append(example)
     return examples
@@ -240,7 +239,7 @@ def annotate(args: argparse.Namespace) -> None:
 
     for path in data_dir.glob("**/*.jsonl.gz"):
         logger.info(f"Load examples from {path}.")
-        examples = [example for example in tqdm.tqdm(load_examples(path))]
+        examples = [example for example in load_examples(path)]
 
         logger.info("Count frequencies of the prefix of each example.")
         worker_fn = partial(
