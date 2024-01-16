@@ -118,7 +118,7 @@ def index_documents(
 
     while True:
         try:
-            helpers.bulk(es.options(request_timeout=1_200), actions())
+            helpers.bulk(es.options(request_timeout=2_400), actions())
             break
         except ConnectionTimeout:
             logger.warning("Connection timeout. Retrying.")
