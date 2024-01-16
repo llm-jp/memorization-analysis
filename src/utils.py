@@ -2,7 +2,7 @@ import gzip
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Iterable, Iterator, Union
+from typing import Iterable, Iterator, Optional, Union
 
 # FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "refined"]
 FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09"]
@@ -22,6 +22,7 @@ class Example:
     token_ids: list[int]
 
     prefix_frequencies: dict[int, int] = field(default_factory=dict)
+    last_seen_iteration: Optional[int] = None
     metrics: dict[str, float] = field(default_factory=dict)
 
 
