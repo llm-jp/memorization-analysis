@@ -9,6 +9,8 @@ from utils import Example, load_examples
 
 logger = logging.getLogger(__name__)
 
+FREQUENCY_BINS = [0, 1, 10, 100, 1_000]
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
@@ -154,12 +156,16 @@ def plot_min_k_percent_prob(
 def plot_extractable(
     examples: list[Example],
     metric_key: str = "extractable",
+    min_frequency: int = 0,
+    max_frequency: int = 1_000_000,
 ) -> go.Figure:
     """Plot the extractable fraction of the examples.
 
     Args:
         examples (list[Example]): A list of examples.
         metric_key (str, optional): The metric key to plot. Defaults to "extractable".
+        min_frequency (int, optional): The minimum frequency to plot. Defaults to 0.
+        max_frequency (int, optional): The maximum frequency to plot. Defaults to 1_000_000.
 
     Returns:
         go.Figure: The plotly figure.
@@ -184,10 +190,25 @@ def plot_extractable(
     for key, l in key_l_map.items():
         row = []
         for step, examples in step_examples_map.items():
-            # Only use examples that no longer appear in the future steps.
-            examples = [e for e in examples if e.prefix_last_iterations[l] == step]
-            if examples:
-                extractable = sum([e.metrics[key] for e in examples]) / len(examples)
+            valid_examples = []
+            for example in examples:
+                if example.prefix_last_iterations[l] != step:
+                    # Only use examples not appearing in the future steps.
+                    continue
+                if example.prefix_frequencies[l] < 1:
+                    # Only use examples with at least one occurrence.
+                    continue
+                if example.prefix_frequencies[l] <= min_frequency:
+                    # Only use examples with the specified frequency.
+                    continue
+                if example.prefix_frequencies[l] > max_frequency:
+                    # Only use examples with the specified frequency.
+                    continue
+                valid_examples.append(example)
+            if valid_examples:
+                extractable = sum([e.metrics[key] for e in valid_examples]) / len(
+                    valid_examples
+                )
             else:
                 extractable = 0.0  # TODO: Use NaN
             row.append(extractable)
@@ -236,10 +257,13 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"Saved to {path}.")
 
     logger.info("Plot extractable fraction.")
-    path = output_dir / "extractable.png"
-    fig = plot_extractable(examples)
-    fig.write_image(str(path))
-    logger.info(f"Saved to {path}.")
+    for min_frequency, max_frequency in zip(FREQUENCY_BINS, FREQUENCY_BINS[1:]):
+        path = output_dir / f"extractable_{min_frequency}_{max_frequency}.png"
+        fig = plot_extractable(
+            examples, min_frequency=min_frequency, max_frequency=max_frequency
+        )
+        fig.write_image(str(path))
+        logger.info(f"Saved to {path}.")
 
 
 if __name__ == "__main__":
