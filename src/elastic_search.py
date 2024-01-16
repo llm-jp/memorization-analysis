@@ -125,13 +125,13 @@ def index_documents(
             continue
 
 
-def search_documents(host: str, index: str, query: str, **kwargs) -> list[dict]:
+def search_documents(host: str, index: str, body: dict, **kwargs) -> list[dict]:
     """Search for documents in an index.
 
     Args:
         host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
-        query (str): The query to use.
+        body (dict): The body of the request.
         **kwargs: Additional keyword arguments.
 
     Returns:
@@ -140,7 +140,7 @@ def search_documents(host: str, index: str, query: str, **kwargs) -> list[dict]:
     es = Elasticsearch(host)
     res = es.options(request_timeout=2_400).search(
         index=index,
-        body={"query": {"match_phrase": {"text": query}}},
+        body=body,
         **kwargs,
     )
     return res["hits"]["hits"]
@@ -236,7 +236,8 @@ def search(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): The parsed arguments.
     """
-    documents = search_documents(args.host, args.index, args.query, size=3)
+    body = {"query": {"match_phrase": {"text": args.query}}}
+    documents = search_documents(args.host, args.index, body=body, size=3)
     for document in documents:
         print(document["_source"]["text"])
         print("---")
