@@ -221,19 +221,19 @@ def main(args: argparse.Namespace) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("Plot perplexity.")
-    path = output_dir / "perplexity.pdf"
+    path = output_dir / "perplexity.png"
     fig = plot_perplexity(examples)
     fig.write_image(str(path))
     logger.info(f"Saved to {path}.")
 
     logger.info("Plot min-k% probability.")
-    path = output_dir / "min_k_percent_prob.pdf"
+    path = output_dir / "min_k_percent_prob.png"
     fig = plot_min_k_percent_prob(examples)
     fig.write_image(str(path))
     logger.info(f"Saved to {path}.")
 
     logger.info("Plot extractable fraction.")
-    path = output_dir / "extractable.pdf"
+    path = output_dir / "extractable.png"
     fig = plot_extractable(examples)
     fig.write_image(str(path))
     logger.info(f"Saved to {path}.")
