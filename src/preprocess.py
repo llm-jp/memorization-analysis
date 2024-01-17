@@ -188,7 +188,10 @@ def get_prefix_last_iterations(
             }
             size = 1
             res = search_documents(host, index, body, size=size)
-            prefix_last_iterations[prefix_length] = res[0]["_source"]["iteration"]
+            if len(res) == 0:
+                prefix_last_iterations[prefix_length] = None
+            else:
+                prefix_last_iterations[prefix_length] = res[0]["_source"]["iteration"]
     return prefix_last_iterations
 
 
