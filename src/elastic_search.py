@@ -7,7 +7,6 @@ from typing import Iterator
 
 from elastic_transport import ConnectionTimeout
 from elasticsearch import Elasticsearch, helpers
-from tqdm import tqdm
 from utils import FOLDS, LOCAL_RANKS, load_examples
 
 logger = logging.getLogger(__name__)
@@ -213,7 +212,7 @@ def index(args: argparse.Namespace) -> None:
     worker_fn = partial(index_documents, args.host, args.index)
 
     with ProcessPoolExecutor(args.num_workers) as executor:
-        for _ in tqdm(executor.map(worker_fn, paths), total=len(paths)):
+        for _ in executor.map(worker_fn, paths):
             pass
 
 
