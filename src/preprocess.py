@@ -228,7 +228,7 @@ def annotate(args: argparse.Namespace) -> None:
         examples = [example for example in load_examples(path)]
 
         logger.info("Get prefix statistics.")
-        worker_fn = partial(get_prefix_stats, args.host, args.index)
+        worker_fn = partial(get_prefix_stats, host=args.host, index=args.index)
         with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
             for example, prefix_stats in zip(
                 examples, executor.map(worker_fn, examples)
