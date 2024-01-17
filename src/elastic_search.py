@@ -178,21 +178,19 @@ def search_documents(host: str, index: str, body: dict, **kwargs) -> list[dict]:
     return res["hits"]["hits"]
 
 
-def count_documents(host: str, index: str, query: str) -> int:
+def count_documents(host: str, index: str, body: dict) -> int:
     """Count the number of documents in an index.
 
     Args:
         host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
-        query (str): The query to use.
+        body (dict): The body of the request.
 
     Returns:
         int: The number of documents in the index.
     """
     es = Elasticsearch(host)
-    res = es.options(request_timeout=2_400).count(
-        index=index, body={"query": {"match_phrase": {"token_ids": query}}}
-    )
+    res = es.options(request_timeout=2_400).count(index=index, body=body)
     return res["count"]
 
 
@@ -225,8 +223,12 @@ def search(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): The parsed arguments.
     """
-    body = {"query": {"match_phrase": {"token_ids": args.query}}}
-    documents = search_documents(args.host, args.index, body=body, size=3)
+    documents = search_documents(
+        args.host,
+        args.index,
+        body={"query": {"match_phrase": {"token_ids": args.query}}},
+        size=3,
+    )
     for document in documents:
         print(document["_source"]["token_ids"])
         print("---")
@@ -238,7 +240,11 @@ def count(args: argparse.Namespace) -> None:
     Args:
         args (argparse.Namespace): The parsed arguments.
     """
-    num_documents = count_documents(args.host, args.index, args.query)
+    num_documents = count_documents(
+        args.host,
+        args.index,
+        body={"query": {"match_phrase": {"token_ids": args.query}}},
+    )
     print(f"Found {num_documents} documents that match the query.")
 
 
