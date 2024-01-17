@@ -1,6 +1,6 @@
 import argparse
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 from pathlib import Path
 
@@ -224,18 +224,17 @@ def annotate(args: argparse.Namespace) -> None:
         examples = [example for example in load_examples(path)]
 
         logger.info("Get prefix statistics.")
-        for prefix_length in PREFIX_LENGTHS:
-            worker_fn = partial(
-                get_prefix_stats,
-                prefix_length=prefix_length,
-                host=args.host,
-                index=args.index,
-            )
-            with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
-                for example, prefix_stats in zip(
-                    examples, executor.map(worker_fn, examples)
-                ):
-                    example.prefix_stats.update(prefix_stats)
+        worker_fn = partial(get_prefix_stats, host=args.host, index=args.index)
+        with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
+            future_to_example = {
+                executor.submit(worker_fn, example, prefix_length): example
+                for example in examples
+                for prefix_length in PREFIX_LENGTHS
+            }
+            for future in as_completed(future_to_example):
+                example = future_to_example[future]
+                prefix_stats = future.result()
+                example.prefix_stats.update(prefix_stats)
 
         logger.info("Save examples.")
         output_file = output_dir / path.relative_to(data_dir)
