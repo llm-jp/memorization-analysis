@@ -21,8 +21,7 @@ class Example:
     text: str
     token_ids: list[int]
 
-    prefix_frequencies: dict[int, int] = field(default_factory=dict)
-    prefix_last_iterations: dict[int, int] = field(default_factory=dict)
+    prefix_stats: dict[int, dict[str, int]] = field(default_factory=dict)
     metrics: dict[str, float] = field(default_factory=dict)
 
 
