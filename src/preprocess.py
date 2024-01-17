@@ -133,6 +133,7 @@ def extract_examples(
 
 def get_prefix_stats(
     example: Example,
+    prefix_length: int,
     host: str,
     index: str,
 ) -> dict[int, dict[str, int]]:
@@ -140,45 +141,40 @@ def get_prefix_stats(
 
     Args:
         example (Example): The example.
+        prefix_length (int): The prefix length.
         host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
 
     Returns:
         dict[int, dict[str, int]]: The prefix statistics.
     """
-    prefix_stats = {}
-    for prefix_length in PREFIX_LENGTHS:
-        prefix = " ".join(map(str, example.token_ids[:prefix_length]))
+    prefix = " ".join(map(str, example.token_ids[:prefix_length]))
 
-        # Count the number of documents that contain the prefix.
-        body = {"query": {"match_phrase": {"token_ids": prefix}}}
-        count = count_documents(host, index, body=body)
-        if count == 0:
-            logger.warning(f"Prefix {prefix} not found in {index}.")
+    # Count the number of documents that contain the prefix.
+    body = {"query": {"match_phrase": {"token_ids": prefix}}}
+    count = count_documents(host, index, body=body)
+    if count == 0:
+        logger.warning(f"Prefix {prefix} not found in {index}.")
 
-        # Get the last iteration of the prefix.
-        if count == 0:
-            last_iteration = -1
-        elif count == 1:
-            last_iteration = example.iteration
-        else:
-            body = {
-                "query": {"match_phrase": {"token_ids": prefix}},
-                "sort": [{"iteration": {"order": "desc"}}],
-            }
-            size = 1
-            res = search_documents(host, index, body=body, size=size)
-            if len(res) == 0:
-                logger.warning(f"Prefix {prefix} not found in {index}.")
-                last_iteration = -1
-            else:
-                last_iteration = res[0]["_source"]["iteration"]
-
-        prefix_stats[prefix_length] = {
-            "count": count,
-            "last_iteration": last_iteration,
+    # Get the last iteration of the prefix.
+    if count == 0:
+        last_iteration = -1
+    elif count == 1:
+        last_iteration = example.iteration
+    else:
+        body = {
+            "query": {"match_phrase": {"token_ids": prefix}},
+            "sort": [{"iteration": {"order": "desc"}}],
         }
-    return prefix_stats
+        size = 1
+        res = search_documents(host, index, body=body, size=size)
+        if len(res) == 0:
+            logger.warning(f"Prefix {prefix} not found in {index}.")
+            last_iteration = -1
+        else:
+            last_iteration = res[0]["_source"]["iteration"]
+
+    return {prefix_length: {"count": count, "last_iteration": last_iteration}}
 
 
 def extract(args: argparse.Namespace) -> None:
@@ -228,12 +224,18 @@ def annotate(args: argparse.Namespace) -> None:
         examples = [example for example in load_examples(path)]
 
         logger.info("Get prefix statistics.")
-        worker_fn = partial(get_prefix_stats, host=args.host, index=args.index)
-        with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
-            for example, prefix_stats in zip(
-                examples, executor.map(worker_fn, examples)
-            ):
-                example.prefix_stats = prefix_stats
+        for prefix_length in PREFIX_LENGTHS:
+            worker_fn = partial(
+                get_prefix_stats,
+                prefix_length=prefix_length,
+                host=args.host,
+                index=args.index,
+            )
+            with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
+                for example, prefix_stats in zip(
+                    examples, executor.map(worker_fn, examples)
+                ):
+                    example.prefix_stats.update(prefix_stats)
 
         logger.info("Save examples.")
         output_file = output_dir / path.relative_to(data_dir)
