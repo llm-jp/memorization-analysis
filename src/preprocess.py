@@ -1,6 +1,6 @@
 import argparse
 import logging
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 
@@ -172,7 +172,7 @@ def get_prefix_stats(
                 index,
                 body=body,
                 size=size,
-                max_concurrent_shard_requests=16,
+                max_concurrent_shard_requests=64,
             )
             if len(res) == 0:
                 logger.warning(f"Prefix {prefix} not found in {index}.")
@@ -209,7 +209,7 @@ def extract(args: argparse.Namespace) -> None:
 
     logger.info("Extract examples.")
     worker_fn = partial(extract_examples, interval=args.interval)
-    with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
+    with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
         for data_file, examples in zip(
             data_files,
             executor.map(worker_fn, data_files),
@@ -235,7 +235,7 @@ def annotate(args: argparse.Namespace) -> None:
 
         logger.info("Get prefix statistics.")
         worker_fn = partial(get_prefix_stats, host=args.host, index=args.index)
-        with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
+        with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
             for example, prefix_stats in zip(
                 examples, executor.map(worker_fn, examples)
             ):
