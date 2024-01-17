@@ -96,12 +96,12 @@ def create_index(host: str, index: str) -> None:
     if es.indices.exists(index=index):
         inp = input(f"Index {index} already exists. Do you want to delete it? [y/N] ")
         if inp.lower() == "y":
-            es.indices.delete(index=index)
+            es.options(request_timeout=2_400).indices.delete(index=index)
         else:
             logger.info("Aborting.")
             exit(0)
 
-    es.indices.create(
+    es.options(request_timeout=2_400).indices.create(
         index=index,
         body={
             "settings": {
