@@ -167,9 +167,7 @@ def get_prefix_stats(
                 "sort": [{"iteration": {"order": "desc"}}],
             }
             size = 1
-            res = search_documents(
-                host, index, body=body, size=size, max_concurrent_shard_requests=16
-            )
+            res = search_documents(host, index, body=body, size=size)
             if len(res) == 0:
                 logger.warning(f"Prefix {prefix} not found in {index}.")
                 last_iteration = -1
