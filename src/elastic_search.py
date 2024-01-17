@@ -105,7 +105,7 @@ def create_index(host: str, index: str) -> None:
         index=index,
         body={
             "settings": {
-                "index": {"number_of_shards": 128, "number_of_replicas": 0},
+                "index": {"number_of_shards": 64, "number_of_replicas": 0},
                 "analysis": {
                     "analyzer": {
                         "custom_analyzer": {
