@@ -1,6 +1,6 @@
 import argparse
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 from typing import Iterator
@@ -211,7 +211,7 @@ def index(args: argparse.Namespace) -> None:
 
     worker_fn = partial(index_documents, args.host, args.index)
 
-    with ThreadPoolExecutor(args.num_workers) as executor:
+    with ProcessPoolExecutor(args.num_workers) as executor:
         for _ in executor.map(worker_fn, paths):
             pass
 
