@@ -172,7 +172,7 @@ def get_prefix_stats(
                 index,
                 body=body,
                 size=size,
-                max_concurrent_shard_requests=64,
+                max_concurrent_shard_requests=16,
             )
             if len(res) == 0:
                 logger.warning(f"Prefix {prefix} not found in {index}.")
