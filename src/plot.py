@@ -3,7 +3,6 @@ import logging
 from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
 import plotly.graph_objs as go
 from utils import Example, load_examples
 
@@ -36,119 +35,6 @@ def parse_args() -> argparse.Namespace:
         help="Whether to print debug messages.",
     )
     return parser.parse_args()
-
-
-def plot_perplexity(
-    examples: list[Example],
-    metric_key: str = "perplexity",
-) -> go.Figure:
-    """Plot the perplexity of the examples.
-
-    Args:
-        examples (list[Example]): A list of examples.
-        metric_key (str, optional): The metric key to plot. Defaults to "perplexity".
-
-    Returns:
-        go.Figure: The plotly figure.
-    """
-    step_examples_map = defaultdict(list)
-    for example in examples:
-        assert metric_key in example.metrics
-        step_examples_map[example.iteration].append(example)
-    step_examples_map = {
-        step: examples for step, examples in sorted(step_examples_map.items())
-    }
-
-    x = []
-    y = []
-    y_std = []
-    for step, examples in step_examples_map.items():
-        x.append(step)
-        perplexity = [example.metrics[metric_key] for example in examples]
-        y.append(sum(perplexity) / len(perplexity))
-        y_std.append(np.std(perplexity))
-
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=x,
-            y=y,
-            mode="lines+markers",
-            error_y={
-                "type": "data",
-                "array": y_std,
-                "visible": True,
-            },
-        )
-    )
-    fig.update_layout(
-        title="Perplexity change over training steps",
-        xaxis_title="Training steps",
-        yaxis_title="Perplexity",
-    )
-    return fig
-
-
-def plot_min_k_percent_prob(
-    examples: list[Example],
-    metric_key: str = "min_k_percent_prob",
-) -> go.Figure:
-    """Plot the Min-K% probability of the examples.
-
-    Args:
-        examples (list[Example]): A list of examples.
-        metric_key (str, optional): The metric key to plot. Defaults to "min_k_percent_prob".
-
-    Returns:
-        go.Figure: The plotly figure.
-    """
-    example = examples[0]
-    key_k_map = {}
-    for key in example.metrics:
-        if key.startswith(metric_key):
-            k = int(key.split("/")[1])
-            key_k_map[key] = k
-    key_k_map = {key: k for key, k in sorted(key_k_map.items(), key=lambda x: x[1])}
-
-    step_examples_map = defaultdict(list)
-    for example in examples:
-        assert all(key in example.metrics for key in key_k_map)
-        step_examples_map[example.iteration].append(example)
-    step_examples_map = {
-        step: examples for step, examples in sorted(step_examples_map.items())
-    }
-
-    fig = go.Figure()
-    for key, k in key_k_map.items():
-        x = []
-        y = []
-        y_std = []
-        for step, examples in step_examples_map.items():
-            x.append(step)
-            min_k_percent_prob = [example.metrics[key] for example in examples]
-            y.append(sum(min_k_percent_prob) / len(min_k_percent_prob))
-            y_std.append(np.std(min_k_percent_prob))
-
-        fig.add_trace(
-            go.Scatter(
-                x=x,
-                y=y,
-                mode="lines+markers",
-                name=f"K={k}",
-                error_y={
-                    "type": "data",
-                    "array": y_std,
-                    "visible": True,
-                },
-            )
-        )
-    fig.update_layout(
-        title="Min-K% probability change over training steps",
-        xaxis_title="Training steps",
-        yaxis_title="Min-K% probability",
-        showlegend=True,
-    )
-    return fig
 
 
 def plot_extractable(
@@ -219,18 +105,6 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"Create output directory {args.output_dir}")
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    logger.info("Plot perplexity.")
-    path = output_dir / "perplexity.png"
-    fig = plot_perplexity(examples)
-    fig.write_image(str(path))
-    logger.info(f"Saved to {path}.")
-
-    logger.info("Plot min-k% probability.")
-    path = output_dir / "min_k_percent_prob.png"
-    fig = plot_min_k_percent_prob(examples)
-    fig.write_image(str(path))
-    logger.info(f"Saved to {path}.")
 
     logger.info("Plot extractable fraction.")
     path = output_dir / "extractable.png"
