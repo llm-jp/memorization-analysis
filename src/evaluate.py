@@ -106,6 +106,7 @@ def main(args: argparse.Namespace) -> None:
 
         logger.info("Save metrics.")
         output_file = output_dir / path.relative_to(data_dir)
+        output_file.parent.mkdir(parents=True, exist_ok=True)
         save_examples(examples, output_file)
         logger.info(f"Saved metrics to {output_file}.")
 
