@@ -84,9 +84,9 @@ def plot_extractable(
             row.append(extractable)
         z.append(row)
 
-    z_max = max([max(row) for row in z])
+    z_max = np.nanmax([np.nanmax(row) for row in z])
     logger.debug(f"z_max = {z_max:.3f}")
-    z_min = min([min(row) for row in z])
+    z_min = np.nanmin([np.nanmin(row) for row in z])
     logger.debug(f"z_min = {z_min:.3f}")
 
     fig = go.Figure()
