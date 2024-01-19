@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
 import plotly.graph_objs as go
 from utils import PREFIX_LENGTHS, Example, load_examples
 
@@ -77,7 +78,7 @@ def plot_extractable(
                     continue
                 examples.append(example)
             if len(examples) == 0:
-                row.append(0.0)  # TODO: 0.0 or None?
+                row.append(np.nan)
                 continue
             extractable = sum([e.metrics[key] for e in examples]) / len(examples)
             row.append(extractable)
