@@ -8,6 +8,8 @@ from utils import PREFIX_LENGTHS, Example, load_examples
 
 logger = logging.getLogger(__name__)
 
+FREQUENCY_BINS = [0, 1, 10, 100, 1_000]
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
@@ -40,12 +42,16 @@ def parse_args() -> argparse.Namespace:
 def plot_extractable(
     examples: list[Example],
     metric_key: str = "extractable",
+    min_frequency: int = 0,
+    max_frequency: int = 999_999_999_999,
 ) -> go.Figure:
     """Plot the extractable fraction of the examples.
 
     Args:
         examples (list[Example]): A list of examples.
         metric_key (str, optional): The metric key to plot. Defaults to "extractable".
+        min_frequency (int, optional): The minimum frequency of the examples to plot.
+        max_frequency (int, optional): The maximum frequency of the examples to plot.
 
     Returns:
         go.Figure: The plotly figure.
@@ -63,8 +69,13 @@ def plot_extractable(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if example.prefix_stats[l]["last_iteration"] == step:
-                    examples.append(example)
+                if example.prefix_stats[l]["last_iteration"] != step:
+                    continue
+                if example.prefix_stats[l]["frequency"] < min_frequency:
+                    continue
+                if example.prefix_stats[l]["frequency"] > max_frequency:
+                    continue
+                examples.append(example)
             if len(examples) == 0:
                 row.append(0.0)  # TODO: 0.0 or None?
                 continue
@@ -105,8 +116,17 @@ def main(args: argparse.Namespace) -> None:
     logger.info("Plot extractable.")
     path = output_dir / "extractable.png"
     fig = plot_extractable(examples)
-    fig.write_image(str(path))
+    fig.write_image(path)
     logger.info(f"Saved to {path}.")
+    for min_frequency, max_frequency in zip(FREQUENCY_BINS[:-1], FREQUENCY_BINS[1:]):
+        path = output_dir / f"extractable_{min_frequency}_{max_frequency}.png"
+        fig = plot_extractable(
+            examples,
+            min_frequency=min_frequency,
+            max_frequency=max_frequency,
+        )
+        fig.write_image(path)
+        logger.info(f"Saved to {path}.")
 
 
 if __name__ == "__main__":
