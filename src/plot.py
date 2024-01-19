@@ -84,6 +84,11 @@ def plot_extractable(
             row.append(extractable)
         z.append(row)
 
+    z_max = max([max(row) for row in z])
+    logger.info(f"z_max = {z_max}")
+    z_min = min([min(row) for row in z])
+    logger.info(f"z_min = {z_min}")
+
     fig = go.Figure()
     fig.add_trace(
         go.Heatmap(
