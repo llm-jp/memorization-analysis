@@ -70,11 +70,11 @@ def plot_extractable(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if example.prefix_stats[l]["last_iteration"] != step:
+                if example.prefix_stats[str(l)]["last_iteration"] != step:
                     continue
-                if example.prefix_stats[l]["frequency"] < min_frequency:
+                if example.prefix_stats[str(l)]["frequency"] < min_frequency:
                     continue
-                if example.prefix_stats[l]["frequency"] > max_frequency:
+                if example.prefix_stats[str(l)]["frequency"] > max_frequency:
                     continue
                 examples.append(example)
             if len(examples) == 0:
