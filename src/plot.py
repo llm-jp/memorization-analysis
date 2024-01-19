@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import plotly.graph_objs as go
-from utils import Example, load_examples
+from utils import PREFIX_LENGTHS, Example, load_examples
 
 logger = logging.getLogger(__name__)
 
@@ -50,29 +50,25 @@ def plot_extractable(
     Returns:
         go.Figure: The plotly figure.
     """
-    example = examples[0]
-    key_l_map = {}
-    for key in example.metrics:
-        if key.startswith(metric_key):
-            l = int(key.split("/")[1])  # noqa: E741
-            key_l_map[key] = l
-    key_l_map = {key: l for key, l in sorted(key_l_map.items(), key=lambda x: x[1])}
-
     step_examples_map = defaultdict(list)
     for example in examples:
-        assert all(key in example.metrics for key in key_l_map)
         step_examples_map[example.iteration].append(example)
-    step_examples_map = {
-        step: examples for step, examples in sorted(step_examples_map.items())
-    }
+
+    steps = sorted(step_examples_map.keys())
 
     z = []
-    for key, l in key_l_map.items():
+    for l in PREFIX_LENGTHS:  # noqa: E741
+        key = f"{metric_key}/{l}"
         row = []
-        for step, examples in step_examples_map.items():
-            extractable = sum([example.metrics[key] for example in examples]) / len(
-                examples
-            )
+        for step in steps:
+            examples = []
+            for example in step_examples_map[step]:
+                if example.prefix_stats[l]["last_iteration"] == step:
+                    examples.append(example)
+            if len(examples) == 0:
+                row.append(0.0)  # TODO: 0.0 or None?
+                continue
+            extractable = sum([e.metrics[key] for e in examples]) / len(examples)
             row.append(extractable)
         z.append(row)
 
@@ -80,8 +76,8 @@ def plot_extractable(
     fig.add_trace(
         go.Heatmap(
             z=z,
-            x=[str(x_i) for x_i in step_examples_map.keys()],
-            y=[str(y_i) for y_i in key_l_map.values()],
+            x=list(map(str, steps)),
+            y=list(map(str, PREFIX_LENGTHS)),
         )
     )
     fig.update_layout(
@@ -106,7 +102,7 @@ def main(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Plot extractable fraction.")
+    logger.info("Plot extractable.")
     path = output_dir / "extractable.png"
     fig = plot_extractable(examples)
     fig.write_image(str(path))
