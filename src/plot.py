@@ -85,9 +85,9 @@ def plot_extractable(
         z.append(row)
 
     z_max = max([max(row) for row in z])
-    logger.debug(f"z_max = {z_max}")
+    logger.debug(f"z_max = {z_max:.3f}")
     z_min = min([min(row) for row in z])
-    logger.debug(f"z_min = {z_min}")
+    logger.debug(f"z_min = {z_min:.3f}")
 
     fig = go.Figure()
     fig.add_trace(
@@ -110,10 +110,9 @@ def plot_extractable(
 def main(args: argparse.Namespace) -> None:
     logger.info(f"Load data from {args.data_dir}")
     data_dir = Path(args.data_dir)
-
     examples = []
     for path in data_dir.glob("**/*.jsonl.gz"):
-        logger.info(f"Load examples from {path}.")
+        logger.debug(f"Load examples from {path}.")
         for example in load_examples(path):
             examples.append(example)
 
