@@ -88,10 +88,8 @@ def plot_extractable(
     fig.add_trace(
         go.Heatmap(
             z=z,
-            x=steps,
-            xtype="category",
-            y=PREFIX_LENGTHS,
-            ytype="category",
+            x=list(map(str, steps)),
+            y=list(map(str, PREFIX_LENGTHS)),
         )
     )
     fig.update_layout(
