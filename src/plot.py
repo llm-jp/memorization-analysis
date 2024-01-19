@@ -85,9 +85,9 @@ def plot_extractable(
         z.append(row)
 
     z_max = max([max(row) for row in z])
-    logger.info(f"z_max = {z_max}")
+    logger.debug(f"z_max = {z_max}")
     z_min = min([min(row) for row in z])
-    logger.info(f"z_min = {z_min}")
+    logger.debug(f"z_min = {z_min}")
 
     fig = go.Figure()
     fig.add_trace(
@@ -127,6 +127,7 @@ def main(args: argparse.Namespace) -> None:
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
     for min_frequency, max_frequency in zip(FREQUENCY_BINS[:-1], FREQUENCY_BINS[1:]):
+        logger.info(f"Plot extractable with frequency in [{min_frequency}, {max_frequency}].")
         path = output_dir / f"extractable_{min_frequency}_{max_frequency}.png"
         fig = plot_extractable(
             examples,
