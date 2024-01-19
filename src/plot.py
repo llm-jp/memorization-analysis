@@ -90,6 +90,8 @@ def plot_extractable(
             z=z,
             x=list(map(str, steps)),
             y=list(map(str, PREFIX_LENGTHS)),
+            zmin=0.0,
+            zmax=0.1,
         )
     )
     fig.update_layout(
