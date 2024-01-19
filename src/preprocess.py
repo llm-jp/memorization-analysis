@@ -193,9 +193,7 @@ def extract(args: argparse.Namespace) -> None:
     data_files = []
     for fold in folds:
         for local_rank in LOCAL_RANKS:
-            data_files.append(
-                data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
-            )
+            data_files.append(data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz")
 
     logger.info("Extract examples.")
     worker_fn = partial(extract_examples, interval=args.interval)

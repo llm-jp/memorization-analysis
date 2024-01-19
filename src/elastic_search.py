@@ -205,9 +205,7 @@ def index(args: argparse.Namespace) -> None:
     data_dir = Path(args.data_dir)
     for fold in FOLDS:
         for local_rank in LOCAL_RANKS:
-            paths.append(
-                data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
-            )
+            paths.append(data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz")
 
     worker_fn = partial(index_documents, args.host, args.index)
 

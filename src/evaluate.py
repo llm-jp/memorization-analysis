@@ -60,9 +60,7 @@ def main(args: argparse.Namespace) -> None:
             torch_dtype = torch.float16
     else:
         torch_dtype = torch.float32
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model_name_or_path, device_map="auto", torch_dtype=torch_dtype
-    )
+    model = AutoModelForCausalLM.from_pretrained(args.model_name_or_path, device_map="auto", torch_dtype=torch_dtype)
     model.eval()
     logger.debug(model)
 
@@ -99,9 +97,7 @@ def main(args: argparse.Namespace) -> None:
                     )
                 cur_output_ids = cur_output_ids[..., l - n :]
                 cur_extractable = extractable(cur_output_ids, cur_labels)
-                for example, extractable_ in zip(
-                    batch_examples, cur_extractable.tolist()
-                ):
+                for example, extractable_ in zip(batch_examples, cur_extractable.tolist()):
                     example.metrics[f"extractable/{l}"] = extractable_
 
         logger.info("Save metrics.")

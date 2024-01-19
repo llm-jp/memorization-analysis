@@ -54,21 +54,15 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"Create a tokenizer from '{args.tokenizer_name_or_path}'")
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path)
 
-    step_seqlen_extractable_map: dict[tuple[int, int], list[Example]] = defaultdict(
-        list
-    )
+    step_seqlen_extractable_map: dict[tuple[int, int], list[Example]] = defaultdict(list)
     for example in examples:
         step = int(example.iteration)
-        for metric_key in filter(
-            lambda x: x.startswith("extractable"), example.metrics
-        ):
+        for metric_key in filter(lambda x: x.startswith("extractable"), example.metrics):
             metric = example.metrics[metric_key]
             if metric is True:
                 seqlen = int(metric_key.split("/")[1])
                 step_seqlen_extractable_map[(step, seqlen)].append(example)
-    step_seqlen_extractable_map = {
-        key: value for key, value in sorted(step_seqlen_extractable_map.items())
-    }
+    step_seqlen_extractable_map = {key: value for key, value in sorted(step_seqlen_extractable_map.items())}
 
     st.title("Browse extractable examples")
 
