@@ -1,6 +1,6 @@
 import argparse
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 
@@ -199,7 +199,7 @@ def extract(args: argparse.Namespace) -> None:
 
     logger.info("Extract examples.")
     worker_fn = partial(extract_examples, interval=args.interval)
-    with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
+    with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
         for data_file, examples in zip(
             data_files,
             executor.map(worker_fn, data_files),
