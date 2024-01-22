@@ -1,11 +1,12 @@
 import argparse
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 
 from elastic_search import count_documents, search_documents
 from utils import (
+    COMPLETION_LENGTH,
     FOLDS,
     LOCAL_RANKS,
     PREFIX_LENGTHS,
@@ -131,50 +132,51 @@ def extract_examples(
     return examples
 
 
-def get_prefix_stats(
+def get_span_stats(
     example: Example,
-    prefix_length: int,
+    start: int,
+    end: int,
     host: str,
     index: str,
-) -> dict[int, dict[str, int]]:
-    """Return prefix statistics.
+) -> dict[str, int]:
+    """Return the statistics of the span of the example.
 
     Args:
         example (Example): The example.
-        prefix_length (int): The prefix length.
+        start (int): The start of the span.
+        end (int): The end of the span.
         host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
 
     Returns:
-        dict[int, dict[str, int]]: The prefix statistics.
+        dict[str, int]: The statistics of the span of the example.
     """
-    prefix = " ".join(map(str, example.token_ids[:prefix_length]))
+    span = " ".join(map(str, example.token_ids[start:end]))
 
-    # Count the number of documents that contain the prefix.
-    body = {"query": {"match_phrase": {"token_ids": prefix}}}
+    # Count the number of documents that contain the span.
+    body = {"query": {"match_phrase": {"token_ids": span}}}
     count = count_documents(host, index, body=body)
-    if count == 0:
-        logger.warning(f"Prefix {prefix} not found in {index}.")
 
-    # Get the last iteration of the prefix.
+    # Get the last iteration of the span.
     if count == 0:
+        logger.warning(f"Span {span} not found in {index}.")
         last_iteration = -1
     elif count == 1:
         last_iteration = example.iteration
     else:
         body = {
-            "query": {"match_phrase": {"token_ids": prefix}},
+            "query": {"match_phrase": {"token_ids": span}},
             "sort": [{"iteration": {"order": "desc"}}],
+            "size": 1,
         }
-        size = 1
-        res = search_documents(host, index, body=body, size=size)
+        res = search_documents(host, index, body=body)
         if len(res) == 0:
-            logger.warning(f"Prefix {prefix} not found in {index}.")
+            logger.warning(f"Span {span} not found in {index}.")
             last_iteration = -1
         else:
             last_iteration = res[0]["_source"]["iteration"]
 
-    return {prefix_length: {"count": count, "last_iteration": last_iteration}}
+    return {"count": count, "last_iteration": last_iteration}
 
 
 def extract(args: argparse.Namespace) -> None:
@@ -221,18 +223,23 @@ def annotate(args: argparse.Namespace) -> None:
         logger.info(f"Load examples from {path}.")
         examples = [example for example in load_examples(path)]
 
-        logger.info("Get prefix statistics.")
-        worker_fn = partial(get_prefix_stats, host=args.host, index=args.index)
+        logger.info("Get completion statistics.")
+        max_prefix_length = max(PREFIX_LENGTHS)
+        start = max_prefix_length - COMPLETION_LENGTH
+        end = max_prefix_length
+        worker_fn = partial(
+            get_span_stats,
+            host=args.host,
+            index=args.index,
+            start=start,
+            end=end,
+        )
         with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
-            future_to_example = {
-                executor.submit(worker_fn, example, prefix_length): example
-                for example in examples
-                for prefix_length in PREFIX_LENGTHS
-            }
-            for future in as_completed(future_to_example):
-                example = future_to_example[future]
-                prefix_stats = future.result()
-                example.completion_stats.update(prefix_stats)
+            for example, completion_stats in zip(
+                examples,
+                executor.map(worker_fn, examples),
+            ):
+                example.completion_stats = completion_stats
 
         logger.info("Save examples.")
         output_file = output_dir / path.relative_to(data_dir)

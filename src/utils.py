@@ -21,7 +21,7 @@ class Example:
     text: str
     token_ids: list[int]
 
-    completion_stats: dict[int, dict[str, int]] = field(default_factory=dict)
+    completion_stats: dict[str, int] = field(default_factory=dict)
     metrics: dict[str, float] = field(default_factory=dict)
 
 
