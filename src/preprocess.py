@@ -232,7 +232,7 @@ def annotate(args: argparse.Namespace) -> None:
             for future in as_completed(future_to_example):
                 example = future_to_example[future]
                 prefix_stats = future.result()
-                example.prefix_stats.update(prefix_stats)
+                example.completion_stats.update(prefix_stats)
 
         logger.info("Save examples.")
         output_file = output_dir / path.relative_to(data_dir)
