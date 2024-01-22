@@ -6,7 +6,7 @@ import torch
 import tqdm
 from metrics import extractable
 from transformers import AutoModelForCausalLM
-from utils import PREFIX_LENGTHS, load_examples, save_examples
+from utils import COMPLETION_END_INDEX, COMPLETION_LENGTH, PREFIX_LENGTHS, load_examples, save_examples
 
 logger = logging.getLogger(__name__)
 
@@ -83,22 +83,28 @@ def main(args: argparse.Namespace) -> None:
 
             batch_input_ids = batch_input_ids.to(model.device)
 
-            n = 50  # The number of tokens to complete.
-            for l in PREFIX_LENGTHS:  # noqa: E741
-                cur_input_ids = batch_input_ids[..., : l - n]
-                cur_labels = batch_input_ids[..., l - n : l]
+            for prefix_length in PREFIX_LENGTHS:
+                start = COMPLETION_END_INDEX - prefix_length
+                end = COMPLETION_END_INDEX - COMPLETION_LENGTH
+                cur_input_ids = batch_input_ids[..., start:end]
                 with torch.no_grad():
                     cur_output_ids = model.generate(
                         cur_input_ids,
                         do_sample=False,
-                        max_length=l,
+                        max_length=prefix_length,
                         eos_token_id=-100,  # Do not stop at EOS.
                         pad_token_id=-100,  # Do not stop at PAD.
                     )
-                cur_output_ids = cur_output_ids[..., l - n :]
+                cur_output_ids = cur_output_ids[..., -COMPLETION_LENGTH:]
+
+                start = COMPLETION_END_INDEX - COMPLETION_LENGTH
+                end = COMPLETION_END_INDEX
+                cur_labels = batch_input_ids[..., start:end]
+
                 cur_extractable = extractable(cur_output_ids, cur_labels)
+
                 for example, extractable_ in zip(batch_examples, cur_extractable.tolist()):
-                    example.metrics[f"extractable/{l}"] = extractable_
+                    example.metrics[f"extractable/{prefix_length}"] = extractable_
 
         logger.info("Save metrics.")
         output_file = output_dir / path.relative_to(data_dir)
