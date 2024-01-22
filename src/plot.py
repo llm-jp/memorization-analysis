@@ -70,11 +70,11 @@ def plot_extractable(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if example.completion_stats[str(l)]["last_iteration"] != step:
+                if example.completion_stats["last_iteration"] != step:
                     continue
-                if example.completion_stats[str(l)]["count"] < min_frequency:
+                if example.completion_stats["count"] < min_frequency:
                     continue
-                if example.completion_stats[str(l)]["count"] > max_frequency:
+                if example.completion_stats["count"] > max_frequency:
                     continue
                 examples.append(example)
             if len(examples) == 0:
