@@ -6,10 +6,10 @@ from pathlib import Path
 
 from elastic_search import count_documents, search_documents
 from utils import (
-    COMPLETION_LENGTH,
+    COMPLETION_END_INDEX,
+    COMPLETION_START_INDEX,
     FOLDS,
     LOCAL_RANKS,
-    PREFIX_LENGTHS,
     Example,
     load_examples,
     save_examples,
@@ -224,15 +224,12 @@ def annotate(args: argparse.Namespace) -> None:
         examples = [example for example in load_examples(path)]
 
         logger.info("Get completion statistics.")
-        max_prefix_length = max(PREFIX_LENGTHS)
-        start = max_prefix_length - COMPLETION_LENGTH
-        end = max_prefix_length
         worker_fn = partial(
             get_span_stats,
             host=args.host,
             index=args.index,
-            start=start,
-            end=end,
+            start=COMPLETION_START_INDEX,
+            end=COMPLETION_END_INDEX,
         )
         with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
             for example, completion_stats in zip(
