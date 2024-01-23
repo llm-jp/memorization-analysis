@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 FREQUENCY_BINS = [0, 1, 10, 100, 1_000]
 
+STEP_INTERVAL = 5_000
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
@@ -59,7 +61,9 @@ def plot_extractable(
     """
     step_examples_map = defaultdict(list)
     for example in examples:
-        step_examples_map[example.iteration].append(example)
+        iteration = example.completion_stats["last_iteration"]
+        rounded_iteration = round(iteration / STEP_INTERVAL) * STEP_INTERVAL
+        step_examples_map[rounded_iteration].append(example)
 
     steps = sorted(step_examples_map.keys())
 
@@ -70,8 +74,6 @@ def plot_extractable(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if example.completion_stats["last_iteration"] != step:
-                    continue
                 if example.completion_stats["count"] < min_frequency:
                     continue
                 if example.completion_stats["count"] > max_frequency:
