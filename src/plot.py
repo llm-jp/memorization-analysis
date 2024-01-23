@@ -9,7 +9,7 @@ from utils import PREFIX_LENGTHS, Example, load_examples
 
 logger = logging.getLogger(__name__)
 
-FREQUENCY_BINS = [0, 1, 10, 100, 1_000]
+FREQUENCY_BINS = [0, 1, 10, 100, 1_000, 10_000]
 
 STEP_INTERVAL = 5_000
 
