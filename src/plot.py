@@ -62,6 +62,8 @@ def plot_extractable(
     step_examples_map = defaultdict(list)
     for example in examples:
         iteration = example.completion_stats["last_iteration"]
+        if iteration < 0:
+            continue
         iteration = (iteration // STEP_INTERVAL) * STEP_INTERVAL
         step_examples_map[iteration].append(example)
 
