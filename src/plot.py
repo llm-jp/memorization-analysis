@@ -34,6 +34,12 @@ def parse_args() -> argparse.Namespace:
         help="The directory to save the output files.",
     )
     parser.add_argument(
+        "--least_num_examples_per_grid",
+        type=int,
+        default=1,
+        help="The minimum number of examples to plot.",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -47,6 +53,7 @@ def plot_extractable(
     metric_key: str = "extractable",
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
+    least_num_examples_per_grid: int = 1,
 ) -> go.Figure:
     """Plot the extractable fraction of the examples.
 
@@ -55,6 +62,7 @@ def plot_extractable(
         metric_key (str, optional): The metric key to plot. Defaults to "extractable".
         min_frequency (int, optional): The minimum frequency of the examples to plot.
         max_frequency (int, optional): The maximum frequency of the examples to plot.
+        least_num_examples_per_grid (int, optional): The minimum number of examples to plot.
 
     Returns:
         go.Figure: The plotly figure.
@@ -81,7 +89,7 @@ def plot_extractable(
                 if example.completion_stats["count"] > max_frequency:
                     continue
                 examples.append(example)
-            if len(examples) == 0:
+            if len(examples) < least_num_examples_per_grid:
                 row.append(np.nan)
                 continue
             extractable = sum([e.metrics[key] for e in examples]) / len(examples)
@@ -136,6 +144,7 @@ def main(args: argparse.Namespace) -> None:
             examples,
             min_frequency=min_frequency,
             max_frequency=max_frequency,
+            least_num_examples_per_grid=args.least_num_examples_per_grid,
         )
         fig.write_image(path)
         logger.info(f"Saved to {path}.")
