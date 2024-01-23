@@ -62,8 +62,8 @@ def plot_extractable(
     step_examples_map = defaultdict(list)
     for example in examples:
         iteration = example.completion_stats["last_iteration"]
-        rounded_iteration = round(iteration / STEP_INTERVAL) * STEP_INTERVAL
-        step_examples_map[rounded_iteration].append(example)
+        iteration = (iteration // STEP_INTERVAL) * STEP_INTERVAL
+        step_examples_map[iteration].append(example)
 
     steps = sorted(step_examples_map.keys())
 
