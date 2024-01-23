@@ -54,7 +54,7 @@ Visualize the results.
 
 ```bash
 PATH_TO_RESULT_DIR=<PATH-TO-RESULT-DIR>
-PATH_TO_PLOT_DIR=<PATH-TO-OUTPUT-DIR>
+PATH_TO_PLOT_DIR=<PATH-TO-PLOT-DIR>
 python src/plot.py --data_dir $PATH_TO_RESULT_DIR --output_dir $PATH_TO_PLOT_DIR
 ```
 
@@ -62,7 +62,7 @@ To browse the memorization metrics, run the following command and open the URL i
 
 ```bash
 PATH_TO_RESULT_DIR=<PATH-TO-RESULT-DIR>
-python src/browse.py --data_dir $PATH_TO_RESULT_DIR
+streamlit run src/browse.py -- --data_dir $PATH_TO_RESULT_DIR
 ```
 
 ## Development
