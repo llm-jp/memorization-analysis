@@ -5,9 +5,13 @@ from pathlib import Path
 
 import numpy as np
 import plotly.graph_objs as go
-from utils import Example, load_examples
+from utils import PREFIX_LENGTHS, Example, load_examples
 
 logger = logging.getLogger(__name__)
+
+FREQUENCY_BINS = [0, 1, 10, 100, 1_000, 10_000]
+
+STEP_INTERVAL = 5_000
 
 
 def parse_args() -> argparse.Namespace:
@@ -30,6 +34,12 @@ def parse_args() -> argparse.Namespace:
         help="The directory to save the output files.",
     )
     parser.add_argument(
+        "--least_num_examples_per_grid",
+        type=int,
+        default=1,
+        help="The minimum number of examples to plot.",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -38,164 +48,67 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def plot_perplexity(
-    examples: list[Example],
-    metric_key: str = "perplexity",
-) -> go.Figure:
-    """Plot the perplexity of the examples.
-
-    Args:
-        examples (list[Example]): A list of examples.
-        metric_key (str, optional): The metric key to plot. Defaults to "perplexity".
-
-    Returns:
-        go.Figure: The plotly figure.
-    """
-    step_examples_map = defaultdict(list)
-    for example in examples:
-        assert metric_key in example.metrics
-        step_examples_map[example.iteration].append(example)
-    step_examples_map = {
-        step: examples for step, examples in sorted(step_examples_map.items())
-    }
-
-    x = []
-    y = []
-    y_std = []
-    for step, examples in step_examples_map.items():
-        x.append(step)
-        perplexity = [example.metrics[metric_key] for example in examples]
-        y.append(sum(perplexity) / len(perplexity))
-        y_std.append(np.std(perplexity))
-
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=x,
-            y=y,
-            mode="lines+markers",
-            error_y={
-                "type": "data",
-                "array": y_std,
-                "visible": True,
-            },
-        )
-    )
-    fig.update_layout(
-        title="Perplexity change over training steps",
-        xaxis_title="Training steps",
-        yaxis_title="Perplexity",
-    )
-    return fig
-
-
-def plot_min_k_percent_prob(
-    examples: list[Example],
-    metric_key: str = "min_k_percent_prob",
-) -> go.Figure:
-    """Plot the Min-K% probability of the examples.
-
-    Args:
-        examples (list[Example]): A list of examples.
-        metric_key (str, optional): The metric key to plot. Defaults to "min_k_percent_prob".
-
-    Returns:
-        go.Figure: The plotly figure.
-    """
-    example = examples[0]
-    key_k_map = {}
-    for key in example.metrics:
-        if key.startswith(metric_key):
-            k = int(key.split("/")[1])
-            key_k_map[key] = k
-    key_k_map = {key: k for key, k in sorted(key_k_map.items(), key=lambda x: x[1])}
-
-    step_examples_map = defaultdict(list)
-    for example in examples:
-        assert all(key in example.metrics for key in key_k_map)
-        step_examples_map[example.iteration].append(example)
-    step_examples_map = {
-        step: examples for step, examples in sorted(step_examples_map.items())
-    }
-
-    fig = go.Figure()
-    for key, k in key_k_map.items():
-        x = []
-        y = []
-        y_std = []
-        for step, examples in step_examples_map.items():
-            x.append(step)
-            min_k_percent_prob = [example.metrics[key] for example in examples]
-            y.append(sum(min_k_percent_prob) / len(min_k_percent_prob))
-            y_std.append(np.std(min_k_percent_prob))
-
-        fig.add_trace(
-            go.Scatter(
-                x=x,
-                y=y,
-                mode="lines+markers",
-                name=f"K={k}",
-                error_y={
-                    "type": "data",
-                    "array": y_std,
-                    "visible": True,
-                },
-            )
-        )
-    fig.update_layout(
-        title="Min-K% probability change over training steps",
-        xaxis_title="Training steps",
-        yaxis_title="Min-K% probability",
-        showlegend=True,
-    )
-    return fig
-
-
 def plot_extractable(
     examples: list[Example],
     metric_key: str = "extractable",
+    min_frequency: int = 0,
+    max_frequency: int = 999_999_999_999,
+    least_num_examples_per_grid: int = 1,
 ) -> go.Figure:
     """Plot the extractable fraction of the examples.
 
     Args:
         examples (list[Example]): A list of examples.
         metric_key (str, optional): The metric key to plot. Defaults to "extractable".
+        min_frequency (int, optional): The minimum frequency of the examples to plot.
+        max_frequency (int, optional): The maximum frequency of the examples to plot.
+        least_num_examples_per_grid (int, optional): The minimum number of examples to plot.
 
     Returns:
         go.Figure: The plotly figure.
     """
-    example = examples[0]
-    key_l_map = {}
-    for key in example.metrics:
-        if key.startswith(metric_key):
-            l = int(key.split("/")[1])  # noqa: E741
-            key_l_map[key] = l
-    key_l_map = {key: l for key, l in sorted(key_l_map.items(), key=lambda x: x[1])}
-
     step_examples_map = defaultdict(list)
     for example in examples:
-        assert all(key in example.metrics for key in key_l_map)
-        step_examples_map[example.iteration].append(example)
-    step_examples_map = {
-        step: examples for step, examples in sorted(step_examples_map.items())
-    }
+        iteration = example.completion_stats["last_iteration"]
+        if iteration < 0:
+            continue
+        iteration = (iteration // STEP_INTERVAL) * STEP_INTERVAL
+        step_examples_map[iteration].append(example)
+
+    steps = sorted(step_examples_map.keys())
 
     z = []
-    for key, l in key_l_map.items():
+    for l in PREFIX_LENGTHS:  # noqa: E741
+        key = f"{metric_key}/{l}"
         row = []
-        for step, examples in step_examples_map.items():
-            extractable = sum([example.metrics[key] for example in examples]) / len(
-                examples
-            )
+        for step in steps:
+            examples = []
+            for example in step_examples_map[step]:
+                if example.completion_stats["count"] < min_frequency:
+                    continue
+                if example.completion_stats["count"] > max_frequency:
+                    continue
+                examples.append(example)
+            if len(examples) < least_num_examples_per_grid:
+                row.append(np.nan)
+                continue
+            extractable = sum([e.metrics[key] for e in examples]) / len(examples)
             row.append(extractable)
         z.append(row)
+
+    z_max = np.nanmax([np.nanmax(row) for row in z])
+    logger.debug(f"z_max = {z_max:.3f}")
+    z_min = np.nanmin([np.nanmin(row) for row in z])
+    logger.debug(f"z_min = {z_min:.3f}")
 
     fig = go.Figure()
     fig.add_trace(
         go.Heatmap(
             z=z,
-            x=[str(x_i) for x_i in step_examples_map.keys()],
-            y=[str(y_i) for y_i in key_l_map.values()],
+            x=list(map(str, steps)),
+            y=list(map(str, PREFIX_LENGTHS)),
+            zmin=0.0,
+            zmax=np.nanmax((z_max, 0.025)),
         )
     )
     fig.update_layout(
@@ -209,10 +122,9 @@ def plot_extractable(
 def main(args: argparse.Namespace) -> None:
     logger.info(f"Load data from {args.data_dir}")
     data_dir = Path(args.data_dir)
-
     examples = []
     for path in data_dir.glob("**/*.jsonl.gz"):
-        logger.info(f"Load examples from {path}.")
+        logger.debug(f"Load examples from {path}.")
         for example in load_examples(path):
             examples.append(example)
 
@@ -220,23 +132,22 @@ def main(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Plot perplexity.")
-    path = output_dir / "perplexity.png"
-    fig = plot_perplexity(examples)
-    fig.write_image(str(path))
-    logger.info(f"Saved to {path}.")
-
-    logger.info("Plot min-k% probability.")
-    path = output_dir / "min_k_percent_prob.png"
-    fig = plot_min_k_percent_prob(examples)
-    fig.write_image(str(path))
-    logger.info(f"Saved to {path}.")
-
-    logger.info("Plot extractable fraction.")
+    logger.info("Plot extractable.")
     path = output_dir / "extractable.png"
     fig = plot_extractable(examples)
-    fig.write_image(str(path))
+    fig.write_image(path)
     logger.info(f"Saved to {path}.")
+    for min_frequency, max_frequency in zip(FREQUENCY_BINS[:-1], FREQUENCY_BINS[1:]):
+        logger.info(f"Plot extractable with frequency in [{min_frequency}, {max_frequency}].")
+        path = output_dir / f"extractable_{min_frequency}_{max_frequency}.png"
+        fig = plot_extractable(
+            examples,
+            min_frequency=min_frequency,
+            max_frequency=max_frequency,
+            least_num_examples_per_grid=args.least_num_examples_per_grid,
+        )
+        fig.write_image(path)
+        logger.info(f"Saved to {path}.")
 
 
 if __name__ == "__main__":

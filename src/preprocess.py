@@ -1,15 +1,15 @@
 import argparse
 import logging
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 
 from elastic_search import count_documents, search_documents
-from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import (
+    COMPLETION_END_INDEX,
+    COMPLETION_START_INDEX,
     FOLDS,
     LOCAL_RANKS,
-    PREFIX_LENGTHS,
     Example,
     load_examples,
     save_examples,
@@ -132,64 +132,51 @@ def extract_examples(
     return examples
 
 
-def get_prefix_frequencies(
+def get_span_stats(
     example: Example,
+    start: int,
+    end: int,
     host: str,
     index: str,
-    tokenizer: PreTrainedTokenizer,
-) -> dict[int, int]:
-    """Return prefix frequencies to the example.
+) -> dict[str, int]:
+    """Return the statistics of the span of the example.
 
     Args:
         example (Example): The example.
+        start (int): The start of the span.
+        end (int): The end of the span.
         host (str): The Elasticsearch host.
         index (str): The name of the Elasticsearch index.
-        tokenizer (PreTrainedTokenizer): The tokenizer.
 
     Returns:
-        dict[int, int]: The prefix frequencies.
+        dict[str, int]: The statistics of the span of the example.
     """
-    prefix_frequencies = {}
-    for prefix_length in PREFIX_LENGTHS:
-        prefix = tokenizer.decode(example.token_ids[:prefix_length])
-        count = count_documents(host, index, prefix)
-        prefix_frequencies[prefix_length] = count
-    return prefix_frequencies
+    span = " ".join(map(str, example.token_ids[start:end]))
 
+    # Count the number of documents that contain the span.
+    body = {"query": {"match_phrase": {"token_ids": span}}}
+    count = count_documents(host, index, body=body)
 
-def get_prefix_last_iterations(
-    example: Example,
-    host: str,
-    index: str,
-    tokenizer: PreTrainedTokenizer,
-) -> dict[int, int]:
-    """Return the last iteration of each prefix.
-
-    Args:
-        example (Example): The example.
-        host (str): The Elasticsearch host.
-        index (str): The name of the Elasticsearch index.
-        tokenizer (PreTrainedTokenizer): The tokenizer.
-
-    Returns:
-        dict[int, int]: The last iteration of each prefix.
-    """
-    prefix_last_iterations = {}
-    for prefix_length, count in example.prefix_frequencies.items():
-        if count == 0:
-            prefix_last_iterations[prefix_length] = None
-        elif count == 1:
-            prefix_last_iterations[prefix_length] = example.iteration
+    # Get the last iteration of the span.
+    if count == 0:
+        logger.warning(f"Span {span} not found in {index}.")
+        last_iteration = -1
+    elif count == 1:
+        last_iteration = example.iteration
+    else:
+        body = {
+            "query": {"match_phrase": {"token_ids": span}},
+            "sort": [{"iteration": {"order": "desc"}}],
+            "size": 1,
+        }
+        res = search_documents(host, index, body=body)
+        if len(res) == 0:
+            logger.warning(f"Span {span} not found in {index}.")
+            last_iteration = -1
         else:
-            prefix = tokenizer.decode(example.token_ids[:prefix_length])
-            body = {
-                "query": {"match_phrase": {"text": prefix}},
-                "sort": [{"iteration": {"order": "desc"}}],
-            }
-            size = 1
-            res = search_documents(host, index, body, size=size)
-            prefix_last_iterations[prefix_length] = res[0]["_source"]["iteration"]
-    return prefix_last_iterations
+            last_iteration = res[0]["_source"]["iteration"]
+
+    return {"count": count, "last_iteration": last_iteration}
 
 
 def extract(args: argparse.Namespace) -> None:
@@ -208,9 +195,7 @@ def extract(args: argparse.Namespace) -> None:
     data_files = []
     for fold in folds:
         for local_rank in LOCAL_RANKS:
-            data_files.append(
-                data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz"
-            )
+            data_files.append(data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz")
 
     logger.info("Extract examples.")
     worker_fn = partial(extract_examples, interval=args.interval)
@@ -234,36 +219,24 @@ def annotate(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Create tokenizer.")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
-
     for path in data_dir.glob("**/*.jsonl.gz"):
         logger.info(f"Load examples from {path}.")
         examples = [example for example in load_examples(path)]
 
-        logger.info("Count frequencies of the prefix of each example.")
+        logger.info("Get completion statistics.")
         worker_fn = partial(
-            get_prefix_frequencies,
+            get_span_stats,
             host=args.host,
             index=args.index,
-            tokenizer=tokenizer,
+            start=COMPLETION_START_INDEX,
+            end=COMPLETION_END_INDEX,
         )
-        with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
-            for example, frequencies in zip(
-                examples, executor.map(worker_fn, examples)
+        with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
+            for example, completion_stats in zip(
+                examples,
+                executor.map(worker_fn, examples),
             ):
-                example.prefix_frequencies = frequencies
-
-        logger.info("Find the last iteration of each prefix.")
-        worker_fn = partial(
-            get_prefix_last_iterations,
-            host=args.host,
-            index=args.index,
-            tokenizer=tokenizer,
-        )
-        with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
-            for example, iterations in zip(examples, executor.map(worker_fn, examples)):
-                example.prefix_last_iterations = iterations
+                example.completion_stats = completion_stats
 
         logger.info("Save examples.")
         output_file = output_dir / path.relative_to(data_dir)

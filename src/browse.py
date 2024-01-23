@@ -5,10 +5,10 @@ from pathlib import Path
 from textwrap import dedent
 
 import streamlit as st
-from plot import plot_extractable
+from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_extractable
 from streamlit_extras.stylable_container import stylable_container
-from transformers import AutoTokenizer
-from utils import Example, load_examples
+from transformers import AutoTokenizer, PreTrainedTokenizer
+from utils import COMPLETION_END_INDEX, COMPLETION_LENGTH, PREFIX_LENGTHS, Example, load_examples
 
 logger = logging.getLogger(__name__)
 
@@ -45,34 +45,49 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"Load data from {args.data_dir}")
     data_dir = Path(args.data_dir)
 
-    examples = []
-    for path in data_dir.glob("**/*.jsonl.gz"):
-        logger.info(f"Load examples from {path}.")
-        for example in load_examples(path):
-            examples.append(example)
+    @st.cache_data
+    def get_examples(data_dir: Path) -> list[Example]:
+        examples = []
+        for path in data_dir.glob("**/*.jsonl.gz"):
+            logger.info(f"Load examples from {path}.")
+            for example in load_examples(path):
+                examples.append(example)
+        return examples
+
+    examples = get_examples(data_dir)
 
     logger.info(f"Create a tokenizer from '{args.tokenizer_name_or_path}'")
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path)
 
-    step_seqlen_extractable_map: dict[tuple[int, int], list[Example]] = defaultdict(
-        list
-    )
+    @st.cache_resource
+    def get_tokenizer(tokenizer_name_or_path: str) -> PreTrainedTokenizer:
+        return AutoTokenizer.from_pretrained(tokenizer_name_or_path)
+
+    tokenizer = get_tokenizer(args.tokenizer_name_or_path)
+
+    step_seqlen_extractable_map: dict[tuple[int, int], list[Example]] = defaultdict(list)
     for example in examples:
-        step = int(example.iteration)
-        for metric_key in filter(
-            lambda x: x.startswith("extractable"), example.metrics
-        ):
-            metric = example.metrics[metric_key]
+        step = example.completion_stats["last_iteration"]
+        if step < 0:
+            continue
+        step = (step // STEP_INTERVAL) * STEP_INTERVAL
+        for prefix_length in PREFIX_LENGTHS:
+            metric = example.metrics[f"extractable/{prefix_length}"]
             if metric is True:
-                seqlen = int(metric_key.split("/")[1])
-                step_seqlen_extractable_map[(step, seqlen)].append(example)
-    step_seqlen_extractable_map = {
-        key: value for key, value in sorted(step_seqlen_extractable_map.items())
-    }
+                step_seqlen_extractable_map[(step, prefix_length)].append(example)
+    step_seqlen_extractable_map = {key: value for key, value in sorted(step_seqlen_extractable_map.items())}
 
     st.title("Browse extractable examples")
 
-    st.plotly_chart(plot_extractable(examples), theme=None)
+    min_frequency, max_frequency = st.select_slider(
+        "Select a frequency range",
+        options=FREQUENCY_BINS,
+        value=(0, 10_000),
+    )
+
+    st.plotly_chart(
+        plot_extractable(examples, min_frequency=min_frequency, max_frequency=max_frequency),
+        theme=None,
+    )
 
     step = st.selectbox(
         "Select a training step",
@@ -97,9 +112,21 @@ def main(args: argparse.Namespace) -> None:
     )
     st.subheader("Extractable examples")
     for example in examples:
-        prompt = tokenizer.decode(example.token_ids[: seqlen - 50])
-        extracted = tokenizer.decode(example.token_ids[seqlen - 50 : seqlen])
+        if example.completion_stats["count"] < min_frequency:
+            continue
+        if example.completion_stats["count"] > max_frequency:
+            continue
+
+        start = COMPLETION_END_INDEX - seqlen
+        end = COMPLETION_END_INDEX - COMPLETION_LENGTH
+        prompt = tokenizer.decode(example.token_ids[start:end])
+
+        start = COMPLETION_END_INDEX - COMPLETION_LENGTH
+        end = COMPLETION_END_INDEX
+        extracted = tokenizer.decode(example.token_ids[start:end])
+
         st.divider()
+
         st.markdown(f"**Source**: {example.dataset_name.split('/')[-1]}")
         st.markdown("**Prompt**")
         with stylable_container(

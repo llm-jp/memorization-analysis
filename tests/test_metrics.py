@@ -72,9 +72,7 @@ class TestMinKPercentProb(unittest.TestCase):
             [1, 1, 1, 1, 1],
             [0, 0, 0, 0, 1],
         ]
-        min_k_percent_prob_ = min_k_percent_prob(
-            torch.tensor(logits), torch.tensor(labels), k=20.0
-        ).tolist()
+        min_k_percent_prob_ = min_k_percent_prob(torch.tensor(logits), torch.tensor(labels), k=20.0).tolist()
         self.assertEqual(len(min_k_percent_prob_), 3)
         self.assertAlmostEqual(min_k_percent_prob_[0], 0.0)
         self.assertLess(min_k_percent_prob_[1], 0.0)
@@ -93,9 +91,7 @@ class TestExtractable(unittest.TestCase):
             [1, 1, 1, 1, 1],
             [0, 0, 0, 0, 1],
         ]
-        extractables = extractable(
-            torch.tensor(output_ids), torch.tensor(labels)
-        ).tolist()
+        extractables = extractable(torch.tensor(output_ids), torch.tensor(labels)).tolist()
         self.assertEqual(len(extractables), 3)
         self.assertAlmostEqual(extractables[0], 1.0)
         self.assertAlmostEqual(extractables[1], 1.0)

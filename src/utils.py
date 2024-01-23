@@ -11,6 +11,9 @@ LOCAL_RANKS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
 PREFIX_LENGTHS = [100, 200, 500, 1_000]
 COMPLETION_LENGTH = 50
 
+COMPLETION_START_INDEX = max(PREFIX_LENGTHS) - COMPLETION_LENGTH
+COMPLETION_END_INDEX = max(PREFIX_LENGTHS)
+
 
 @dataclass
 class Example:
@@ -21,8 +24,7 @@ class Example:
     text: str
     token_ids: list[int]
 
-    prefix_frequencies: dict[int, int] = field(default_factory=dict)
-    prefix_last_iterations: dict[int, int] = field(default_factory=dict)
+    completion_stats: dict[str, int] = field(default_factory=dict)
     metrics: dict[str, float] = field(default_factory=dict)
 
 

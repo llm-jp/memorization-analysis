@@ -15,24 +15,54 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
-## Analyzing memorization metrics
+## Preprocess
 
-First, calculate the memorization metrics for a model.
+First, preprocess the training data.
+
+### Extract training data
+
+The first step is to extract the training data at specific training steps.
 
 ```bash
-python src/evaluate.py --data_dir <PATH-TO-DATA-DIR> --output_dir <PATH-TO-OUTPUT-DIR>
+PATH_TO_DATA_DIR=<PATH-TO-DATA-DIR>
+PATH_TO_EXTRACT_DIR=<PATH-TO-EXTRACT-DIR>
+python src/preprocess.py extract --data_dir $PATH_TO_DATA_DIR --output_dir $PATH_TO_EXTRACT_DIR
 ```
 
-Then, plot the memorization metrics.
+### Annotate training data
+
+The second step is to annotate the training data with frequency information, etc.
 
 ```bash
-python src/plot.py --data_dir <PATH-TO-DATA-DIR> --output_dir <PATH-TO-OUTPUT-DIR>
+PATH_TO_EXTRACT_DIR=<PATH-TO-EXTRACT-DIR>
+PATH_TO_ANNOTATE_DIR=<PATH-TO-ANNOTATE-DIR>
+python src/preprocess.py annotate --data_dir $PATH_TO_EXTRACT_DIR --output_dir $PATH_TO_ANNOTATE_DIR
+```
+
+## Evaluate memorization metrics
+
+Evaluate memorization metrics for a model.
+
+```bash
+PATH_TO_ANNOTATE_DIR=<PATH-TO-ANNOTATE-DIR>
+PATH_TO_RESULT_DIR=<PATH-TO-RESULT-DIR>
+MODEL_NAME_OR_PATH=<MODEL-NAME-OR-PATH>
+python src/evaluate.py --data_dir $PATH_TO_ANNOTATE_DIR --output_dir $PATH_TO_RESULT_DIR --model_name_or_path $MODEL_NAME_OR_PATH
+```
+
+Visualize the results.
+
+```bash
+PATH_TO_RESULT_DIR=<PATH-TO-RESULT-DIR>
+PATH_TO_PLOT_DIR=<PATH-TO-PLOT-DIR>
+python src/plot.py --data_dir $PATH_TO_RESULT_DIR --output_dir $PATH_TO_PLOT_DIR
 ```
 
 To browse the memorization metrics, run the following command and open the URL in a browser.
 
 ```bash
-python src/browse.py --data_dir <PATH-TO-DATA-DIR>
+PATH_TO_RESULT_DIR=<PATH-TO-RESULT-DIR>
+streamlit run src/browse.py -- --data_dir $PATH_TO_RESULT_DIR
 ```
 
 ## Development
