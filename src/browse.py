@@ -7,7 +7,7 @@ from textwrap import dedent
 import streamlit as st
 from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_extractable
 from streamlit_extras.stylable_container import stylable_container
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import COMPLETION_END_INDEX, COMPLETION_LENGTH, PREFIX_LENGTHS, Example, load_examples
 
 logger = logging.getLogger(__name__)
@@ -45,14 +45,24 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"Load data from {args.data_dir}")
     data_dir = Path(args.data_dir)
 
-    examples = []
-    for path in data_dir.glob("**/*.jsonl.gz"):
-        logger.info(f"Load examples from {path}.")
-        for example in load_examples(path):
-            examples.append(example)
+    @st.cache_data
+    def get_examples(data_dir: Path) -> list[Example]:
+        examples = []
+        for path in data_dir.glob("**/*.jsonl.gz"):
+            logger.info(f"Load examples from {path}.")
+            for example in load_examples(path):
+                examples.append(example)
+        return examples
+
+    examples = get_examples(data_dir)
 
     logger.info(f"Create a tokenizer from '{args.tokenizer_name_or_path}'")
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path)
+
+    @st.cache_resource
+    def get_tokenizer(tokenizer_name_or_path: str) -> PreTrainedTokenizer:
+        return AutoTokenizer.from_pretrained(tokenizer_name_or_path)
+
+    tokenizer = get_tokenizer(args.tokenizer_name_or_path)
 
     step_seqlen_extractable_map: dict[tuple[int, int], list[Example]] = defaultdict(list)
     for example in examples:
