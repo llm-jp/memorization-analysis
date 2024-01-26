@@ -65,8 +65,6 @@ def main(args: argparse.Namespace) -> None:
 
     tokenizer = get_tokenizer(args.tokenizer_name_or_path)
 
-
-
     min_frequency, max_frequency = st.select_slider(
         "Select a frequency range",
         options=FREQUENCY_BINS,
