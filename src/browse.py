@@ -5,10 +5,11 @@ from pathlib import Path
 from textwrap import dedent
 
 import streamlit as st
-from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_extractable
 from streamlit_extras.stylable_container import stylable_container
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import COMPLETION_END_INDEX, COMPLETION_LENGTH, PREFIX_LENGTHS, Example, load_examples
+
+from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_extractable
 
 logger = logging.getLogger(__name__)
 
@@ -64,10 +65,19 @@ def main(args: argparse.Namespace) -> None:
 
     tokenizer = get_tokenizer(args.tokenizer_name_or_path)
 
+    min_frequency, max_frequency = st.select_slider(
+        "Select a frequency range",
+        options=FREQUENCY_BINS,
+        value=(0, 10_000),
+    )
     step_seqlen_extractable_map: dict[tuple[int, int], list[Example]] = defaultdict(list)
     for example in examples:
         step = example.completion_stats["last_iteration"]
         if step < 0:
+            continue
+        if example.completion_stats["count"] < min_frequency:
+            continue
+        if example.completion_stats["count"] > max_frequency:
             continue
         step = (step // STEP_INTERVAL) * STEP_INTERVAL
         for prefix_length in PREFIX_LENGTHS:
@@ -77,12 +87,6 @@ def main(args: argparse.Namespace) -> None:
     step_seqlen_extractable_map = {key: value for key, value in sorted(step_seqlen_extractable_map.items())}
 
     st.title("Browse extractable examples")
-
-    min_frequency, max_frequency = st.select_slider(
-        "Select a frequency range",
-        options=FREQUENCY_BINS,
-        value=(0, 10_000),
-    )
 
     st.plotly_chart(
         plot_extractable(examples, min_frequency=min_frequency, max_frequency=max_frequency),
