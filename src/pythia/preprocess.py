@@ -4,7 +4,10 @@ import json
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
+from queue import Queue
+from threading import Thread
 
+import numpy as np
 from mmap_dataset import MMapIndexedDataset
 from tqdm import tqdm, trange
 from transformers import AutoTokenizer
@@ -36,6 +39,52 @@ def parse_args() -> argparse.Namespace:
         help="Whether to print debug messages.",
     )
     return parser.parse_args()
+
+
+def create_example_lines(
+    token_ids: np.ndarray,
+    texts: list[str],
+    start: int,
+    end: int,
+    output_queue: Queue,
+) -> None:
+    """Create example lines from token IDs and texts.
+
+    Args:
+        token_ids (np.ndarray): The token IDs.
+        texts (list[str]): The texts.
+        start (int): The start iteration.
+        end (int): The end iteration.
+        output_queue (Queue): The output queue.
+    """
+    assert len(token_ids) == len(texts) == end - start
+    for iteration, batch_token_ids, batch_texts in zip(trange(start, end, desc="Write"), token_ids, texts):
+        for token_ids, text in zip(batch_token_ids, batch_texts):
+            example = {
+                "iteration": iteration,
+                "dataset_idx": 0,
+                "dataset_name": "pile",
+                "doc_ids": [0],
+                "text": text,
+                "token_ids": token_ids.tolist(),
+            }
+            output_queue.put(json.dumps(example, ensure_ascii=False))
+    output_queue.put(None)  # End of iteration
+
+
+def write_example_lines(output_path: str, output_queue: Queue) -> None:
+    """Write example lines to file.
+
+    Args:
+        output_path (str): The output path.
+        output_queue (Queue): The output queue.
+    """
+    with gzip.open(output_path, "wt", encoding="utf-8") as output_file:
+        while True:
+            example_line = output_queue.get()
+            if example_line is None:
+                break
+            output_file.write(example_line + "\n")
 
 
 def main(args: argparse.Namespace) -> None:
@@ -72,20 +121,23 @@ def main(args: argparse.Namespace) -> None:
         # Write examples to file
         output_path = os.path.join(args.output_path, f"pythia-{start:05d}-{end - 1:05d}.jsonl.gz")
         logger.info(f"Write {len(token_ids) * BATCH_SIZE} examples to {output_path}")
-        with gzip.open(output_path, "wt", encoding="utf-8") as output_file:
-            for iteration, batch_token_ids, batch_texts in zip(
-                trange(start, end, leave=False, desc="Write"), token_ids, texts
-            ):
-                for token_ids, text in zip(batch_token_ids, batch_texts):
-                    example = {
-                        "iteration": iteration,
-                        "dataset_idx": 0,
-                        "dataset_name": "pile",
-                        "doc_ids": [0],
-                        "text": text,
-                        "token_ids": token_ids.tolist(),
-                    }
-                    output_file.write(json.dumps(example, ensure_ascii=False) + "\n")
+
+        output_queue = Queue()
+        example_preparation_thread = Thread(
+            target=create_example_lines,
+            args=(token_ids, texts, start, end, output_queue),
+        )
+
+        example_writing_thread = Thread(
+            target=write_example_lines,
+            args=(output_path, output_queue),
+        )
+
+        example_preparation_thread.start()
+        example_writing_thread.start()
+
+        example_preparation_thread.join()
+        example_writing_thread.join()
 
 
 if __name__ == "__main__":
