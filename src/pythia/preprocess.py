@@ -1,44 +1,50 @@
 import argparse
 import gzip
 import json
+import logging
 import os
 
 from mmap_dataset import MMapIndexedDataset
 from tqdm import trange
 from transformers import AutoTokenizer
 
-parser = argparse.ArgumentParser(
-    description="",
-)
-parser.add_argument("--start_iteration", type=int, default=0, help="What train step to start logging")
-parser.add_argument("--end_iteration", type=int, default=143000, help="Train step to end logging (inclusive)")
-parser.add_argument(
-    "--load_path",
-    type=str,
-    default="/mnt/ssd-1/pile_preshuffled/standard/document",
-    help=("MMap dataset path with .bin and .idx files. Omit the .bin (or) .idx " "Extension while specifying the path"),
-)
-parser.add_argument("--save_path", type=str, default="token_indicies", help="Save path for files")
-parser.add_argument("--base_iteration", type=int, default=0, help="Base iteration")
+logger = logging.getLogger(__name__)
 
 
-# 143 files
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data_path", type=str, required=True, help="Path to the data directory")
+    parser.add_argument("--output_path", type=str, required=True, help="Path to the output directory")
+    parser.add_argument("--start_iteration", type=int, default=0, help="What train step to start logging")
+    parser.add_argument("--end_iteration", type=int, default=143000, help="Train step to end logging (inclusive)")
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Whether to print debug messages.",
+    )
+    return parser.parse_args()
 
 
-def convert_to_llm_jp_format(pythia_data_path, llm_jp_output_dir, base_iteration=0):
+def main(args: argparse.Namespace) -> None:
     # Create output directory if not exists
-    os.makedirs(llm_jp_output_dir, exist_ok=True)
+    os.makedirs(args.output_path, exist_ok=True)
 
     tokenizer = AutoTokenizer.from_pretrained(
         "EleutherAI/pythia-14m",
         revision="step3000",
         cache_dir="/model/i-sugiura/pythia-14m/step3000",
     )
-    dataset = MMapIndexedDataset(pythia_data_path, skip_warmup=True)
-    print(len(dataset))
+    dataset = MMapIndexedDataset(args.data_path, skip_warmup=True)
+    logger.info(len(dataset))
     steps_per_file = 1000
-    for i in trange(base_iteration, 143):
-        path = os.path.join(llm_jp_output_dir, f"pythia-{i*steps_per_file:05d}-{(i+1)*steps_per_file-1:05d}.jsonl.gz")
+    for i in trange(0, 143):
+        path = os.path.join(args.output_path, f"pythia-{i*steps_per_file:05d}-{(i+1)*steps_per_file-1:05d}.jsonl.gz")
         with gzip.open(path, "wt", encoding="utf-8") as output_file:
             for j in trange(steps_per_file):
                 iteration = i * steps_per_file + j
@@ -60,10 +66,12 @@ def convert_to_llm_jp_format(pythia_data_path, llm_jp_output_dir, base_iteration
                 output_file.write("\n".join(current_file_lines))
 
 
-# Example usage
-args = parser.parse_args()
+if __name__ == "__main__":
+    args = parse_args()
 
-pythia_data_path = "/model/i-sugiura/datasets--EleutherAI--pile-standard-pythia-preshuffled/snapshots/merged/document"
-llm_jp_output_dir = "/model/i-sugiura/datasets--EleutherAI--pile-standard-pythia-preshuffled/snapshots/converted"
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(asctime)s %(name)s:%(lineno)d: %(levelname)s: %(message)s",
+    )
 
-convert_to_llm_jp_format(pythia_data_path, llm_jp_output_dir, base_iteration=args.base_iteration)
+    main(args)
