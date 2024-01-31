@@ -58,7 +58,7 @@ def create_example_lines(
         output_queue (Queue): The output queue.
     """
     assert len(token_ids) == len(texts) == end - start
-    for iteration, batch_token_ids, batch_texts in zip(trange(start, end, desc="Write"), token_ids, texts):
+    for iteration, batch_token_ids, batch_texts in zip(trange(start, end, desc="Serialize"), token_ids, texts):
         for token_ids, text in zip(batch_token_ids, batch_texts):
             example = {
                 "iteration": iteration,
