@@ -11,6 +11,11 @@ from transformers import AutoTokenizer
 logger = logging.getLogger(__name__)
 
 
+START_ITERATION = 0
+END_ITERATION = 143000
+BATCH_SIZE = 1024
+
+
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
@@ -20,8 +25,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, required=True, help="Path to the data directory")
     parser.add_argument("--output_path", type=str, required=True, help="Path to the output directory")
-    parser.add_argument("--start_iteration", type=int, default=0, help="What train step to start logging")
-    parser.add_argument("--end_iteration", type=int, default=143000, help="Train step to end logging (inclusive)")
     parser.add_argument(
         "--verbose",
         "-v",
@@ -50,7 +53,7 @@ def main(args: argparse.Namespace) -> None:
                 iteration = i * steps_per_file + j
                 current_file_lines = []
                 # TODO: end is (iteration+1)*1024 + 1 ? or not?
-                batch = dataset[iteration * 1024 : (iteration + 1) * 1024]
+                batch = dataset[iteration * BATCH_SIZE : (iteration + 1) * BATCH_SIZE]
                 for data in batch:
                     text = tokenizer.decode(data)
                     token_ids = data.tolist()
