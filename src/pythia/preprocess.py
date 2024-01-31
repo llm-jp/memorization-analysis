@@ -72,19 +72,26 @@ def create_example_lines(
     output_queue.put(None)  # End of iteration
 
 
-def write_example_lines(output_path: str, output_queue: Queue) -> None:
+def write_example_lines(
+    output_path: str,
+    output_queue: Queue,
+    total: int = None,
+) -> None:
     """Write example lines to file.
 
     Args:
         output_path (str): The output path.
         output_queue (Queue): The output queue.
+        total (int, optional): The total number of examples. Defaults to None.
     """
     with gzip.open(output_path, "wt", encoding="utf-8") as output_file:
-        while True:
-            example_line = output_queue.get()
-            if example_line is None:
-                break
-            output_file.write(example_line + "\n")
+        with tqdm(desc="Write", total=total) as pbar:
+            while True:
+                example_line = output_queue.get()
+                if example_line is None:
+                    break
+                output_file.write(example_line + "\n")
+                pbar.update(1)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -130,7 +137,7 @@ def main(args: argparse.Namespace) -> None:
 
         example_writing_thread = Thread(
             target=write_example_lines,
-            args=(output_path, output_queue),
+            args=(output_path, output_queue, chunk_size * BATCH_SIZE),
         )
 
         example_preparation_thread.start()
