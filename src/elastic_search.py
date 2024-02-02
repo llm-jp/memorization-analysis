@@ -204,7 +204,7 @@ def index(args: argparse.Namespace) -> None:
 
     paths = []
     for data_dir in args.data_dir:
-        paths.extend(list(data_dir.glob("**/*.jsonl.gz")))
+        paths.extend(list(Path(data_dir).glob("**/*.jsonl.gz")))
 
     worker_fn = partial(index_documents, args.host, args.index)
 
