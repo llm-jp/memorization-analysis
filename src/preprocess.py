@@ -55,13 +55,6 @@ def parse_args() -> argparse.Namespace:
         help="The interval between two steps to sample examples.",
     )
     parser_extract.add_argument(
-        "--folds",
-        nargs="+",
-        type=str,
-        required=False,
-        help="The folds to evaluate. If not specified, all folds will be evaluated.",
-    )
-    parser_extract.add_argument(
         "--num_workers",
         type=int,
         default=1,
@@ -93,12 +86,6 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="memorization-analysis-dev",
         help="The name of the Elasticsearch index.",
-    )
-    parser_annotate.add_argument(
-        "--model_name_or_path",
-        type=str,
-        default="llm-jp/llm-jp-1.3b-v1.0",
-        help="The model name or path for the language model.",
     )
     parser_annotate.add_argument(
         "--num_workers",
