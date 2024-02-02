@@ -41,11 +41,11 @@ def load_examples(path: Union[str, Path]) -> Iterator[Example]:
         Iterator[Example]: An iterator over the examples.
     """
     with gzip.open(path, "rt") as f:
-        for line in f:
+        for i, line in enumerate(f):
             try:
                 yield Example(**json.loads(line))
             except json.JSONDecodeError:
-                logger.warning(f"Failed to parse: {line}")
+                logger.warning(f"Failed to parse line {i} in {path}.")
                 continue
 
 
