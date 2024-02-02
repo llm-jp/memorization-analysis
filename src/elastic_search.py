@@ -252,7 +252,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
+        level=logging.INFO if args.verbose else logging.WARNING,
         format="%(asctime)s %(name)s:%(lineno)d: %(levelname)s: %(message)s",
     )
 
