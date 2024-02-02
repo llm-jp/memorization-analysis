@@ -7,7 +7,7 @@ from typing import Iterator
 
 from elastic_transport import ConnectionTimeout
 from elasticsearch import Elasticsearch, helpers
-from utils import FOLDS, LOCAL_RANKS, load_examples
+from utils import load_examples
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +46,9 @@ def parse_args() -> argparse.Namespace:
     parser_index.add_argument(
         "--data_dir",
         type=str,
+        nargs="+",
         required=True,
-        help="The directory containing data files.",
+        help="The directories containing data files.",
     )
     parser_index.add_argument(
         "--num_workers",
@@ -202,10 +203,8 @@ def index(args: argparse.Namespace) -> None:
     create_index(args.host, args.index)
 
     paths = []
-    data_dir = Path(args.data_dir)
-    for fold in FOLDS:
-        for local_rank in LOCAL_RANKS:
-            paths.append(data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz")
+    for data_dir in args.data_dir:
+        paths.extend(list(data_dir.glob("**/*.jsonl.gz")))
 
     worker_fn = partial(index_documents, args.host, args.index)
 
