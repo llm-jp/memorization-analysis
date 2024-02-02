@@ -179,26 +179,23 @@ def get_span_stats(
 
 
 def extract(args: argparse.Namespace) -> None:
-    logger.info(f"Load data from {args.data_dir}")
-    data_dir = Path(args.data_dir)
-
     logger.info(f"Create output directory {args.output_dir}")
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    paths = []
     for data_dir in args.data_dir:
-        paths.extend(list(Path(data_dir).glob("**/*.jsonl.gz")))
+        logger.info(f"Load data from {data_dir}")
+        paths = Path(data_dir).glob("**/*.jsonl.gz")
 
-    logger.info("Extract examples.")
-    worker_fn = partial(extract_examples, interval=args.interval)
-    with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
-        for path, examples in zip(paths, executor.map(worker_fn, paths)):
-            logger.info("Save examples.")
-            output_file = output_dir / path.relative_to(data_dir)
-            output_file.parent.mkdir(parents=True, exist_ok=True)
-            save_examples(examples, output_file)
-            logger.info(f"Saved examples to {output_file}.")
+        logger.info("Extract examples.")
+        worker_fn = partial(extract_examples, interval=args.interval)
+        with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
+            for path, examples in zip(paths, executor.map(worker_fn, paths)):
+                logger.info("Save examples.")
+                output_file = output_dir / path.relative_to(data_dir.parent)
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+                save_examples(examples, output_file)
+                logger.info(f"Saved examples to {output_file}.")
 
 
 def annotate(args: argparse.Namespace) -> None:
