@@ -8,8 +8,6 @@ from elastic_search import count_documents, search_documents
 from utils import (
     COMPLETION_END_INDEX,
     COMPLETION_START_INDEX,
-    FOLDS,
-    LOCAL_RANKS,
     Example,
     load_examples,
     save_examples,
@@ -40,6 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser_extract.add_argument(
         "--data_dir",
         type=str,
+        nargs="+",
         required=True,
         help="The directory containing data files.",
     )
@@ -187,25 +186,16 @@ def extract(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.folds is None:
-        folds = FOLDS
-    else:
-        folds = args.folds
-
-    data_files = []
-    for fold in folds:
-        for local_rank in LOCAL_RANKS:
-            data_files.append(data_dir / f"used_data_{fold}" / f"used_data_{local_rank}.jsonl.gz")
+    paths = []
+    for data_dir in args.data_dir:
+        paths.extend(list(Path(data_dir).glob("**/*.jsonl.gz")))
 
     logger.info("Extract examples.")
     worker_fn = partial(extract_examples, interval=args.interval)
     with ProcessPoolExecutor(max_workers=args.num_workers) as executor:
-        for data_file, examples in zip(
-            data_files,
-            executor.map(worker_fn, data_files),
-        ):
+        for path, examples in zip(paths, executor.map(worker_fn, paths)):
             logger.info("Save examples.")
-            output_file = output_dir / data_file.relative_to(data_dir)
+            output_file = output_dir / path.relative_to(data_dir)
             output_file.parent.mkdir(parents=True, exist_ok=True)
             save_examples(examples, output_file)
             logger.info(f"Saved examples to {output_file}.")
