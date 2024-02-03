@@ -172,7 +172,7 @@ def extract(args: argparse.Namespace) -> None:
 
     for data_dir in args.data_dir:
         logger.info(f"Load data from {data_dir}")
-        paths = Path(data_dir).glob("**/*.jsonl.gz")
+        paths = list(Path(data_dir).glob("**/*.jsonl.gz"))
 
         logger.info("Extract examples.")
         worker_fn = partial(extract_examples, interval=args.interval)
