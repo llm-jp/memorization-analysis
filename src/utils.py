@@ -1,8 +1,11 @@
 import gzip
 import json
+import logging
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Union
+
+logger = logging.getLogger(__name__)
 
 # FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "refined"]
 FOLDS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09"]
@@ -38,8 +41,12 @@ def load_examples(path: Union[str, Path]) -> Iterator[Example]:
         Iterator[Example]: An iterator over the examples.
     """
     with gzip.open(path, "rt") as f:
-        for line in f:
-            yield Example(**json.loads(line))
+        for i, line in enumerate(f):
+            try:
+                yield Example(**json.loads(line))
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse line {i} in {path}.")
+                continue
 
 
 def save_examples(examples: Iterable[Example], path: Union[str, Path]) -> None:
