@@ -45,6 +45,25 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Whether to print debug messages.",
     )
+    parser.add_argument(
+        "--min_frequency",
+        type=int,
+        default=0,
+        help="The minimum frequency of the examples to plot.",
+    )
+    parser.add_argument(
+        "--max_frequency",
+        type=int,
+        default=999_999_999_999,
+        help="The maximum frequency of the examples to plot.",
+    )
+    parser.add_argument(
+        "--zmax",
+        type=float,
+        default=0,
+        help="The maximum value of the heatmap.",
+    )
+
     return parser.parse_args()
 
 
@@ -54,6 +73,7 @@ def plot_extractable(
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
     least_num_examples_per_grid: int = 1,
+    heatmap_zmax: float = 1,
 ) -> go.Figure:
     """Plot the extractable fraction of the examples.
 
@@ -108,11 +128,11 @@ def plot_extractable(
             x=list(map(str, steps)),
             y=list(map(str, PREFIX_LENGTHS)),
             zmin=0.0,
-            zmax=np.nanmax((z_max, 0.025)),
+            zmax=np.nanmax((z_max, heatmap_zmax)),
         )
     )
     fig.update_layout(
-        title="Extractable fraction change over training steps",
+        title=f"Extractable fraction change over training steps(frequency: {min_frequency} - {max_frequency})",
         xaxis_title="Training steps",
         yaxis_title="Sequence length",
     )
@@ -137,17 +157,20 @@ def main(args: argparse.Namespace) -> None:
     fig = plot_extractable(examples)
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
-    for min_frequency, max_frequency in zip(FREQUENCY_BINS[:-1], FREQUENCY_BINS[1:]):
-        logger.info(f"Plot extractable with frequency in [{min_frequency}, {max_frequency}].")
-        path = output_dir / f"extractable_{min_frequency}_{max_frequency}.png"
-        fig = plot_extractable(
-            examples,
-            min_frequency=min_frequency,
-            max_frequency=max_frequency,
-            least_num_examples_per_grid=args.least_num_examples_per_grid,
-        )
-        fig.write_image(path)
-        logger.info(f"Saved to {path}.")
+    min_frequency = args.min_frequency
+    max_frequency = args.max_frequency
+
+    logger.info(f"Plot extractable with frequency in [{min_frequency}, {max_frequency}].")
+    path = output_dir / f"extractable_{min_frequency}_{max_frequency}.png"
+    fig = plot_extractable(
+        examples,
+        min_frequency=min_frequency,
+        max_frequency=max_frequency,
+        least_num_examples_per_grid=args.least_num_examples_per_grid,
+        heatmap_zmax=args.zmax,
+    )
+    fig.write_image(path)
+    logger.info(f"Saved to {path}.")
 
 
 if __name__ == "__main__":
