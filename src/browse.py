@@ -2,14 +2,12 @@ import argparse
 import logging
 from collections import defaultdict
 from pathlib import Path
-from textwrap import dedent
 
 import streamlit as st
+from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_approximate_memorization_ratio
 from streamlit_extras.stylable_container import stylable_container
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import COMPLETION_END_INDEX, COMPLETION_LENGTH, PREFIX_LENGTHS, Example, load_examples
-
-from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_extractable
 
 logger = logging.getLogger(__name__)
 
@@ -65,88 +63,106 @@ def main(args: argparse.Namespace) -> None:
 
     tokenizer = get_tokenizer(args.tokenizer_name_or_path)
 
+    st.title("Browse memorized examples")
+
+    memorization_threshold = st.slider(
+        "Select a memorization threshold",
+        min_value=0.75,
+        max_value=1.0,
+        value=1.0,
+        step=0.05,
+    )
+
     min_frequency, max_frequency = st.select_slider(
         "Select a frequency range",
         options=FREQUENCY_BINS,
         value=(0, 10_000),
     )
-    step_seqlen_extractable_map: dict[tuple[int, int], list[Example]] = defaultdict(list)
+    memorized_examples: dict[tuple[int, int], list[Example]] = defaultdict(list)
+
     for example in examples:
+        count = example.completion_stats["count"]
+        if count < min_frequency or count > max_frequency:
+            continue
+
         step = example.completion_stats["last_iteration"]
         if step < 0:
             continue
-        if example.completion_stats["count"] < min_frequency:
-            continue
-        if example.completion_stats["count"] > max_frequency:
-            continue
         step = (step // STEP_INTERVAL) * STEP_INTERVAL
-        for prefix_length in PREFIX_LENGTHS:
-            metric = example.metrics[f"extractable/{prefix_length}"]
-            if metric is True:
-                step_seqlen_extractable_map[(step, prefix_length)].append(example)
-    step_seqlen_extractable_map = {key: value for key, value in sorted(step_seqlen_extractable_map.items())}
 
-    st.title("Browse extractable examples")
+        for prefix_length in PREFIX_LENGTHS:
+            if memorization_threshold == 1.0:
+                is_memorized = example.metrics[f"extractable/{prefix_length}"]
+            else:
+                is_memorized = example.metrics[f"bleu/{prefix_length}"] > memorization_threshold
+            if is_memorized:
+                memorized_examples[(step, prefix_length)].append(example)
+    memorized_examples = {key: value for key, value in sorted(memorized_examples.items())}
 
     st.plotly_chart(
-        plot_extractable(examples, min_frequency=min_frequency, max_frequency=max_frequency),
+        plot_approximate_memorization_ratio(
+            examples,
+            min_frequency=min_frequency,
+            max_frequency=max_frequency,
+            threshold=memorization_threshold,
+        ),
         theme=None,
     )
 
+    st.subheader("Memorized examples")
+
     step = st.selectbox(
         "Select a training step",
-        sorted({key[0] for key in step_seqlen_extractable_map.keys()}),
+        sorted({key[0] for key in memorized_examples.keys()}),
     )
 
     seqlen = st.selectbox(
         "Select a sequence length",
-        sorted({key[1] for key in step_seqlen_extractable_map.keys()}),
+        sorted({key[1] for key in memorized_examples.keys()}),
     )
 
-    examples = step_seqlen_extractable_map.get((step, seqlen), [])
-    st.header(f"Grid: ({step:,}, {seqlen:,})")
-    st.markdown(
-        dedent(
-            f"""\
-            - Training step: {step:,}
-            - Sequence length: {seqlen:,}
-            - Number of extractable examples: {len(examples):,}
-            """
-        )
-    )
-    st.subheader("Extractable examples")
+    examples = memorized_examples.get((step, seqlen), [])
+    st.markdown(f"**Number of memorized examples**: {len(examples):,}")
+
     for example in examples:
-        if example.completion_stats["count"] < min_frequency:
-            continue
-        if example.completion_stats["count"] > max_frequency:
-            continue
-
         start = COMPLETION_END_INDEX - seqlen
         end = COMPLETION_END_INDEX - COMPLETION_LENGTH
-        prompt = tokenizer.decode(example.token_ids[start:end])
+        prefix = tokenizer.decode(example.token_ids[start:end])
 
         start = COMPLETION_END_INDEX - COMPLETION_LENGTH
         end = COMPLETION_END_INDEX
-        extracted = tokenizer.decode(example.token_ids[start:end])
+        suffix = tokenizer.decode(example.token_ids[start:end])
+
+        count = example.completion_stats["count"]
+
+        completion = tokenizer.decode(example.completions[str(seqlen)])  # noqa
+
+        bleu = example.metrics[f"bleu/{seqlen}"]
 
         st.divider()
 
         st.markdown(f"**Source**: {example.dataset_name.split('/')[-1]}")
-        st.markdown("**Prompt**")
+        st.markdown("**Prefix**")
         with stylable_container(
             "codeblock",
             "code {white-space: pre-wrap !important;",
         ):
-            st.code(prompt)
-        st.markdown("**Extracted**")
+            st.code(prefix)
+        st.markdown(f"**Suffix** (Count in corpus: {count:,})")
         with stylable_container(
             "codeblock",
             "code {white-space: pre-wrap !important;",
         ):
-            st.code(extracted)
+            st.code(suffix)
+        st.markdown(f"**Completion** (BLEU: {bleu:.3f})")
+        with stylable_container(
+            "codeblock",
+            "code {white-space: pre-wrap !important;",
+        ):
+            st.code(completion)
 
     if len(examples) == 0:
-        st.warning("No extractable examples.")
+        st.warning("No memorized examples exist.")
 
 
 if __name__ == "__main__":
