@@ -141,7 +141,9 @@ def main(args: argparse.Namespace) -> None:
         end = COMPLETION_END_INDEX
         suffix = tokenizer.decode(example.token_ids[start:end])
 
-        completion = tokenizer.decode(example.completions[seqlen])
+        completion = tokenizer.decode(example.completions[str(seqlen)])
+
+        bleu = example.metrics[f"bleu/{seqlen}"]
 
         st.divider()
 
@@ -158,7 +160,7 @@ def main(args: argparse.Namespace) -> None:
             "code {white-space: pre-wrap !important;",
         ):
             st.code(suffix)
-        st.markdown("**Completion**")
+        st.markdown(f"**Completion** (BLEU: {bleu:.3f})")
         with stylable_container(
             "codeblock",
             "code {white-space: pre-wrap !important;",
