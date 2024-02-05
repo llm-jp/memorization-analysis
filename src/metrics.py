@@ -1,5 +1,5 @@
 import torch
-from nltk.translate.bleu_score import sentence_bleu
+from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 from torch.nn import CrossEntropyLoss
 
 
@@ -97,5 +97,6 @@ def bleu(
     for i in range(batch_size):
         hypothesis = output_ids[i].tolist()
         references = [labels[i].tolist()]
-        bleu_.append(sentence_bleu(references, hypothesis))
+        chencherry = SmoothingFunction()
+        bleu_.append(sentence_bleu(references, hypothesis, smoothing_function=chencherry.method1))  # noqa
     return torch.tensor(bleu_)
