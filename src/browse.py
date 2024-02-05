@@ -5,11 +5,10 @@ from pathlib import Path
 from textwrap import dedent
 
 import streamlit as st
+from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_verbatim_memorization_ratio
 from streamlit_extras.stylable_container import stylable_container
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from utils import COMPLETION_END_INDEX, COMPLETION_LENGTH, PREFIX_LENGTHS, Example, load_examples
-
-from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_extractable
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +88,7 @@ def main(args: argparse.Namespace) -> None:
     st.title("Browse extractable examples")
 
     st.plotly_chart(
-        plot_extractable(examples, min_frequency=min_frequency, max_frequency=max_frequency),
+        plot_verbatim_memorization_ratio(examples, min_frequency=min_frequency, max_frequency=max_frequency),
         theme=None,
     )
 

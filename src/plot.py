@@ -48,14 +48,14 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def plot_extractable(
+def plot_verbatim_memorization_ratio(
     examples: list[Example],
     metric_key: str = "extractable",
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
     least_num_examples_per_grid: int = 1,
 ) -> go.Figure:
-    """Plot the extractable fraction of the examples.
+    """Plot the verbatim memorization ratio.
 
     Args:
         examples (list[Example]): A list of examples.
@@ -112,7 +112,7 @@ def plot_extractable(
         )
     )
     fig.update_layout(
-        title="Extractable fraction change over training steps",
+        title="Verbatim memorization ratio over training steps",
         xaxis_title="Training steps",
         yaxis_title="Sequence length",
     )
@@ -132,15 +132,15 @@ def main(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Plot extractable.")
-    path = output_dir / "extractable.png"
-    fig = plot_extractable(examples)
+    logger.info("Plot verbatim memorization ratio.")
+    path = output_dir / "verbatim_memorization_ratio.png"
+    fig = plot_verbatim_memorization_ratio(examples)
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
     for min_frequency, max_frequency in zip(FREQUENCY_BINS[:-1], FREQUENCY_BINS[1:]):
         logger.info(f"Plot extractable with frequency in [{min_frequency}, {max_frequency}].")
-        path = output_dir / f"extractable_{min_frequency}_{max_frequency}.png"
-        fig = plot_extractable(
+        path = output_dir / f"verbatim_memorization_ratio_{min_frequency}_{max_frequency}.png"
+        fig = plot_verbatim_memorization_ratio(
             examples,
             min_frequency=min_frequency,
             max_frequency=max_frequency,

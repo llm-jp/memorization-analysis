@@ -1,11 +1,11 @@
 import unittest
 
-from src.plot import plot_extractable
+from src.plot import plot_verbatim_memorization_ratio
 from src.utils import Example
 
 
-class TestPlotExtractable(unittest.TestCase):
-    def test_plot_extractable(self):
+class TestPlotVerbatimMemorizationRatio(unittest.TestCase):
+    def test_plot_verbatim_memorization_ratio(self):
         examples = [
             Example(
                 iteration=0,
@@ -80,4 +80,4 @@ class TestPlotExtractable(unittest.TestCase):
                 },
             ),
         ]
-        _ = plot_extractable(examples)
+        _ = plot_verbatim_memorization_ratio(examples)
