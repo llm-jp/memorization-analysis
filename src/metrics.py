@@ -1,4 +1,5 @@
 import torch
+from sacrebleu import corpus_bleu
 from torch.nn import CrossEntropyLoss
 
 
@@ -74,3 +75,25 @@ def extractable(
 
     extractable_ = (output_ids == labels).sum(1) == labels.shape[1]
     return extractable_
+
+
+def bleu(
+    output_texts: list[str],
+    reference_texts: list[str],
+) -> list[float]:
+    """Calculate BLEU score.
+
+    Args:
+        output_texts (list[str]): Output texts of length batch_size.
+        reference_texts (list[str]): Target texts of length batch_size.
+
+    Returns:
+        list[float]: BLEU scores of length batch_size.
+    """
+    assert len(output_texts) == len(reference_texts)
+
+    bleu_scores = [
+        corpus_bleu([output_text], [[reference_text]]).score
+        for output_text, reference_text in zip(output_texts, reference_texts)
+    ]
+    return bleu_scores
