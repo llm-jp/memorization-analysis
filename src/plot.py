@@ -105,7 +105,6 @@ def plot_verbatim_memorization_ratio(
             x=list(map(str, steps)),
             y=list(map(str, PREFIX_LENGTHS)),
             zmin=0.0,
-            zmax=np.nanmax((z_max, 0.025)),
         )
     )
     fig.update_layout(
