@@ -12,4 +12,4 @@ streamlit
 streamlit_extras
 elasticsearch
 pytest
-sacrebleu
+nltk
