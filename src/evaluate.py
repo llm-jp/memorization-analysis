@@ -4,8 +4,8 @@ from pathlib import Path
 
 import torch
 import tqdm
-from metrics import extractable
-from transformers import AutoModelForCausalLM
+from metrics import bleu, extractable
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from utils import COMPLETION_END_INDEX, COMPLETION_LENGTH, PREFIX_LENGTHS, load_examples, save_examples
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,11 @@ def parse_args() -> argparse.Namespace:
         help="The model name or path for the language model.",
     )
     parser.add_argument(
+        "--tokenizer_name_or_path",
+        type=str,
+        help="The tokenizer name or path for the language model.",
+    )
+    parser.add_argument(
         "--batch_size",
         type=int,
         default=1,
@@ -64,6 +69,11 @@ def main(args: argparse.Namespace) -> None:
     model.eval()
     logger.debug(model)
 
+    tokenizer_name_or_path = args.tokenizer_name_or_path or args.model_name_or_path
+    logger.info(f"Load tokenizer from {tokenizer_name_or_path}")
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
+    logger.debug(tokenizer)
+
     logger.info(f"Load data from {args.data_dir}")
     data_dir = Path(args.data_dir)
 
@@ -83,6 +93,12 @@ def main(args: argparse.Namespace) -> None:
 
             batch_input_ids = batch_input_ids.to(model.device)
 
+            start = COMPLETION_END_INDEX - COMPLETION_LENGTH
+            end = COMPLETION_END_INDEX
+            cur_labels = batch_input_ids[..., start:end]
+
+            cur_reference_texts = tokenizer.batch_decode(cur_labels)
+
             for prefix_length in PREFIX_LENGTHS:
                 start = COMPLETION_END_INDEX - prefix_length
                 end = COMPLETION_END_INDEX - COMPLETION_LENGTH
@@ -96,15 +112,15 @@ def main(args: argparse.Namespace) -> None:
                         pad_token_id=-100,  # Do not stop at PAD.
                     )
                 cur_output_ids = cur_output_ids[..., -COMPLETION_LENGTH:]
-
-                start = COMPLETION_END_INDEX - COMPLETION_LENGTH
-                end = COMPLETION_END_INDEX
-                cur_labels = batch_input_ids[..., start:end]
+                cur_output_texts = tokenizer.batch_decode(cur_output_ids)
 
                 cur_extractable = extractable(cur_output_ids, cur_labels)
-
                 for example, extractable_ in zip(batch_examples, cur_extractable.tolist()):
                     example.metrics[f"extractable/{prefix_length}"] = extractable_
+
+                cur_bleu = bleu(cur_output_texts, cur_reference_texts)
+                for example, bleu_ in zip(batch_examples, cur_bleu):
+                    example.metrics[f"bleu/{prefix_length}"] = bleu_
 
         logger.info("Save metrics.")
         output_file = output_dir / path.relative_to(data_dir)
