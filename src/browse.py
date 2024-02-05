@@ -141,7 +141,9 @@ def main(args: argparse.Namespace) -> None:
         end = COMPLETION_END_INDEX
         suffix = tokenizer.decode(example.token_ids[start:end])
 
-        completion = tokenizer.decode(example.completions[str(seqlen)])
+        count = example.completion_stats["count"]
+
+        completion = tokenizer.decode(example.completions[str(seqlen)])  # noqa
 
         bleu = example.metrics[f"bleu/{seqlen}"]
 
@@ -154,7 +156,7 @@ def main(args: argparse.Namespace) -> None:
             "code {white-space: pre-wrap !important;",
         ):
             st.code(prefix)
-        st.markdown("**Suffix**")
+        st.markdown(f"**Suffix** (count in corpus: {count})")
         with stylable_container(
             "codeblock",
             "code {white-space: pre-wrap !important;",
