@@ -2,7 +2,6 @@ import argparse
 import logging
 from collections import defaultdict
 from pathlib import Path
-from textwrap import dedent
 
 import streamlit as st
 from plot import FREQUENCY_BINS, STEP_INTERVAL, plot_approximate_memorization_ratio
@@ -123,16 +122,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     examples = memorized_examples.get((step, seqlen), [])
-    st.header(f"Grid: ({step:,}, {seqlen:,})")
-    st.markdown(
-        dedent(
-            f"""\
-            - Training step: {step:,}
-            - Sequence length: {seqlen:,}
-            - Number of memorized examples: {len(examples):,}
-            """
-        )
-    )
+    st.markdown(f"**Number of memorized examples**: {len(examples):,}")
 
     for example in examples:
         start = COMPLETION_END_INDEX - seqlen
