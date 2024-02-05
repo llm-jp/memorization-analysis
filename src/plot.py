@@ -158,7 +158,7 @@ def plot_approximate_memorization_ratio(
             if len(examples) < least_num_examples_per_grid:
                 row.append(np.nan)
                 continue
-            memorization_ratio = sum([e.metrics[key] >= threshold for e in examples]) / len(examples)
+            memorization_ratio = sum([e.metrics[key] > threshold for e in examples]) / len(examples)
             row.append(memorization_ratio)
         z.append(row)
 

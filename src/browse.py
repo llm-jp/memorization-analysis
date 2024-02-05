@@ -94,7 +94,7 @@ def main(args: argparse.Namespace) -> None:
             if memorization_threshold == 1.0:
                 is_memorized = example.metrics[f"extractable/{prefix_length}"]
             else:
-                is_memorized = example.metrics[f"bleu/{prefix_length}"] >= memorization_threshold
+                is_memorized = example.metrics[f"bleu/{prefix_length}"] > memorization_threshold
             if is_memorized:
                 memorized_examples[(step, prefix_length)].append(example)
     memorized_examples = {key: value for key, value in sorted(memorized_examples.items())}
