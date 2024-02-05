@@ -1,4 +1,5 @@
 import torch
+from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 from torch.nn import CrossEntropyLoss
 
 
@@ -74,3 +75,28 @@ def extractable(
 
     extractable_ = (output_ids == labels).sum(1) == labels.shape[1]
     return extractable_
+
+
+def bleu(
+    output_ids: torch.Tensor,
+    labels: torch.Tensor,
+) -> torch.Tensor:
+    """Calculate BLEU score.
+
+    Args:
+        output_ids (torch.Tensor): Output IDs of shape (batch_size, sequence_length).
+        labels (torch.Tensor): Labels of shape (batch_size, sequence_length).
+
+    Returns:
+        torch.Tensor: BLEU score of shape (batch_size,).
+    """
+    batch_size, sequence_length = output_ids.shape
+    assert labels.shape == (batch_size, sequence_length)
+
+    bleu_ = []
+    for i in range(batch_size):
+        hypothesis = output_ids[i].tolist()
+        references = [labels[i].tolist()]
+        chencherry = SmoothingFunction()
+        bleu_.append(sentence_bleu(references, hypothesis, smoothing_function=chencherry.method1))  # noqa
+    return torch.tensor(bleu_)

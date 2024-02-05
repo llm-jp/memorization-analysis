@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 import tqdm
-from metrics import extractable
+from metrics import bleu, extractable
 from transformers import AutoModelForCausalLM
 from utils import COMPLETION_END_INDEX, COMPLETION_LENGTH, PREFIX_LENGTHS, load_examples, save_examples
 
@@ -83,6 +83,10 @@ def main(args: argparse.Namespace) -> None:
 
             batch_input_ids = batch_input_ids.to(model.device)
 
+            start = COMPLETION_END_INDEX - COMPLETION_LENGTH
+            end = COMPLETION_END_INDEX
+            cur_labels = batch_input_ids[..., start:end]
+
             for prefix_length in PREFIX_LENGTHS:
                 start = COMPLETION_END_INDEX - prefix_length
                 end = COMPLETION_END_INDEX - COMPLETION_LENGTH
@@ -97,14 +101,13 @@ def main(args: argparse.Namespace) -> None:
                     )
                 cur_output_ids = cur_output_ids[..., -COMPLETION_LENGTH:]
 
-                start = COMPLETION_END_INDEX - COMPLETION_LENGTH
-                end = COMPLETION_END_INDEX
-                cur_labels = batch_input_ids[..., start:end]
-
                 cur_extractable = extractable(cur_output_ids, cur_labels)
-
                 for example, extractable_ in zip(batch_examples, cur_extractable.tolist()):
                     example.metrics[f"extractable/{prefix_length}"] = extractable_
+
+                cur_bleu = bleu(cur_output_ids, cur_labels)
+                for example, bleu_ in zip(batch_examples, cur_bleu.tolist()):
+                    example.metrics[f"bleu/{prefix_length}"] = bleu_
 
         logger.info("Save metrics.")
         output_file = output_dir / path.relative_to(data_dir)
