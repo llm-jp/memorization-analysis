@@ -84,11 +84,8 @@ def plot_verbatim_memorization_ratio(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if example.completion_stats["count"] < min_frequency:
-                    continue
-                if example.completion_stats["count"] > max_frequency:
-                    continue
-                examples.append(example)
+                if min_frequency <= example.completion_stats["count"] <= max_frequency:
+                    examples.append(example)
             if len(examples) < least_num_examples_per_grid:
                 row.append(np.nan)
                 continue
