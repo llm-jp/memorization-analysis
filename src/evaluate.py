@@ -106,7 +106,7 @@ def main(args: argparse.Namespace) -> None:
                     example.metrics[f"extractable/{prefix_length}"] = extractable_
 
                 cur_bleu = bleu(cur_output_ids, cur_labels)
-                for example, bleu_ in zip(batch_examples, cur_bleu):
+                for example, bleu_ in zip(batch_examples, cur_bleu.tolist()):
                     example.metrics[f"bleu/{prefix_length}"] = bleu_
 
         logger.info("Save metrics.")
