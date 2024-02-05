@@ -110,6 +110,8 @@ def main(args: argparse.Namespace) -> None:
         theme=None,
     )
 
+    st.subheader("Memorized examples")
+
     step = st.selectbox(
         "Select a training step",
         sorted({key[0] for key in memorized_examples.keys()}),
@@ -131,7 +133,7 @@ def main(args: argparse.Namespace) -> None:
             """
         )
     )
-    st.subheader("Memorized examples")
+
     for example in examples:
         start = COMPLETION_END_INDEX - seqlen
         end = COMPLETION_END_INDEX - COMPLETION_LENGTH
