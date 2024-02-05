@@ -100,18 +100,21 @@ class TestExtractable(unittest.TestCase):
 
 class TestBleu(unittest.TestCase):
     def test_bleu(self):
-        output_texts = [
-            "this is a test for bleu score",
-            "totally different texts will get 0.0 bleu score",
-            "slightly different texts will get a higher bleu score",
+        output_ids = [
+            [0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1],
+            [0, 0, 1, 1, 1],
+            [0, 0, 0, 0, 1],
         ]
-        reference_texts = [
-            "this is a test for bleu score",
-            "natural language processing is fun and interesting",
-            "slightly different texts will get a higher score",
+        labels = [
+            [0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0],
         ]
-        bleu_ = bleu(output_texts, reference_texts)
-        self.assertEqual(len(bleu_), 3)
-        self.assertGreater(bleu_[0], 0.75)
-        self.assertAlmostEqual(bleu_[1], 0.0)
-        self.assertGreater(bleu_[2], 0.75)
+        bleu_ = bleu(torch.tensor(output_ids), torch.tensor(labels)).tolist()
+        self.assertEqual(len(bleu_), 4)
+        self.assertAlmostEqual(bleu_[0], 1.0)
+        self.assertAlmostEqual(bleu_[1], 1.0)
+        self.assertAlmostEqual(bleu_[2], 0.0)  # No 4-gram overlap
+        self.assertGreater(bleu_[3], 0.5)

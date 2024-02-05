@@ -1,5 +1,5 @@
 import torch
-from sacrebleu import corpus_bleu
+from nltk.translate.bleu_score import sentence_bleu
 from torch.nn import CrossEntropyLoss
 
 
@@ -78,22 +78,24 @@ def extractable(
 
 
 def bleu(
-    output_texts: list[str],
-    reference_texts: list[str],
-) -> list[float]:
+    output_ids: torch.Tensor,
+    labels: torch.Tensor,
+) -> torch.Tensor:
     """Calculate BLEU score.
 
     Args:
-        output_texts (list[str]): Output texts of length batch_size.
-        reference_texts (list[str]): Target texts of length batch_size.
+        output_ids (torch.Tensor): Output IDs of shape (batch_size, sequence_length).
+        labels (torch.Tensor): Labels of shape (batch_size, sequence_length).
 
     Returns:
-        list[float]: BLEU scores of length batch_size.
+        torch.Tensor: BLEU score of shape (batch_size,).
     """
-    assert len(output_texts) == len(reference_texts)
+    batch_size, sequence_length = output_ids.shape
+    assert labels.shape == (batch_size, sequence_length)
 
-    bleu_scores = [
-        corpus_bleu([output_text], [[reference_text]]).score
-        for output_text, reference_text in zip(output_texts, reference_texts)
-    ]
-    return bleu_scores
+    bleu_ = []
+    for i in range(batch_size):
+        hypothesis = output_ids[i].tolist()
+        references = [labels[i].tolist()]
+        bleu_.append(sentence_bleu(references, hypothesis))
+    return torch.tensor(bleu_)
