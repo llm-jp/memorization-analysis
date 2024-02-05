@@ -24,6 +24,7 @@ class Example:
     text: str
     token_ids: list[int]
 
+    completions: dict[int, list[int]] = field(default_factory=dict)
     completion_stats: dict[str, int] = field(default_factory=dict)
     metrics: dict[str, float] = field(default_factory=dict)
 
