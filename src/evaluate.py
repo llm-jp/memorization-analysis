@@ -107,6 +107,9 @@ def main(args: argparse.Namespace) -> None:
                     )
                 cur_output_ids = cur_output_ids[..., -COMPLETION_LENGTH:]
 
+                for example, output_ids in zip(batch_examples, cur_output_ids.tolist()):
+                    example.completions[prefix_length] = output_ids
+
                 cur_extractable = extractable(cur_output_ids, cur_labels)
                 for example, extractable_ in zip(batch_examples, cur_extractable.tolist()):
                     example.metrics[f"extractable/{prefix_length}"] = extractable_
