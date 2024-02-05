@@ -64,6 +64,8 @@ def main(args: argparse.Namespace) -> None:
 
     tokenizer = get_tokenizer(args.tokenizer_name_or_path)
 
+    st.title("Browse memorized examples")
+
     memorization_threshold = st.slider(
         "Select a memorization threshold",
         min_value=0.75,
@@ -97,8 +99,6 @@ def main(args: argparse.Namespace) -> None:
             if is_memorized:
                 memorized_examples[(step, prefix_length)].append(example)
     memorized_examples = {key: value for key, value in sorted(memorized_examples.items())}
-
-    st.title("Browse memorized examples")
 
     st.plotly_chart(
         plot_approximate_memorization_ratio(
