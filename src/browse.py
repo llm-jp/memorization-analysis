@@ -156,7 +156,7 @@ def main(args: argparse.Namespace) -> None:
             "code {white-space: pre-wrap !important;",
         ):
             st.code(prefix)
-        st.markdown(f"**Suffix** (count in corpus: {count})")
+        st.markdown(f"**Suffix** (Count in corpus: {count:,})")
         with stylable_container(
             "codeblock",
             "code {white-space: pre-wrap !important;",
