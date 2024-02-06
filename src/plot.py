@@ -198,7 +198,7 @@ def plot_approximate_memorization_ratio(
         )
     )
     fig.update_layout(
-        title="Approximate memorization ratio over training steps(frequency: {min_frequency} - {max_frequency})",
+        title=f"Approximate memorization ratio over training steps(frequency: {min_frequency} - {max_frequency})",
         xaxis_title="Training steps",
         yaxis_title="Sequence length",
     )
@@ -237,7 +237,6 @@ def main(args: argparse.Namespace) -> None:
     )
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
-    return
 
     logger.info("Plot approximate memorization ratio.")
     path = output_dir / "approximate_memorization_ratio.png"
