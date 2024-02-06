@@ -70,8 +70,14 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"Create output directory {args.output_dir}")
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    path_list = list(data_dir.glob("**/*.jsonl.gz"))
+    path_list = sorted(path_list)
 
-    for path in data_dir.glob("**/*.jsonl.gz"):
+    for path in path_list:
+        output_file = output_dir / path.relative_to(data_dir)
+        if output_file.exists():
+            logger.info(f"Skip {path} because {output_file} already exists.")
+            continue
         logger.info(f"Load examples from {path}.")
         examples = [example for example in load_examples(path)]
 
@@ -113,7 +119,7 @@ def main(args: argparse.Namespace) -> None:
                     example.metrics[f"bleu/{prefix_length}"] = bleu_
 
         logger.info("Save metrics.")
-        output_file = output_dir / path.relative_to(data_dir)
+        #output_file = output_dir / path.relative_to(data_dir)
         output_file.parent.mkdir(parents=True, exist_ok=True)
         save_examples(examples, output_file)
         logger.info(f"Saved metrics to {output_file}.")
