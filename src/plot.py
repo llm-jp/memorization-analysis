@@ -64,6 +64,13 @@ def parse_args() -> argparse.Namespace:
         help="The maximum value of the heatmap.",
     )
 
+    parser.add_argument(
+        "--count_method",
+        type=str,
+        default="count",
+        help="The method to count the number of examples.",
+    )
+
     return parser.parse_args()
 
 
@@ -74,6 +81,7 @@ def plot_verbatim_memorization_ratio(
     max_frequency: int = 999_999_999_999,
     least_num_examples_per_grid: int = 1,
     heatmap_zmax: float = 1,
+    count_method: str = "count", # or "near_dup_count"
 ) -> go.Figure:
     """Plot the verbatim memorization ratio.
 
@@ -104,7 +112,7 @@ def plot_verbatim_memorization_ratio(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if min_frequency <= example.completion_stats["count"] <= max_frequency:
+                if min_frequency <= example.completion_stats[count_method] <= max_frequency:
                     examples.append(example)
             if len(examples) < least_num_examples_per_grid:
                 row.append(np.nan)
@@ -143,6 +151,7 @@ def plot_approximate_memorization_ratio(
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
     least_num_examples_per_grid: int = 1,
+    count_method: str = "count", # or "near_dup_count"
 ) -> go.Figure:
     """Plot the approximate memorization ratio.
 
@@ -174,7 +183,7 @@ def plot_approximate_memorization_ratio(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if min_frequency <= example.completion_stats["count"] <= max_frequency:
+                if min_frequency <= example.completion_stats[count_method] <= max_frequency:
                     examples.append(example)
             if len(examples) < least_num_examples_per_grid:
                 row.append(np.nan)
@@ -220,7 +229,7 @@ def main(args: argparse.Namespace) -> None:
 
     logger.info("Plot verbatim memorization ratio.")
     path = output_dir / "verbatim_memorization_ratio.png"
-    fig = plot_verbatim_memorization_ratio(examples)
+    fig = plot_verbatim_memorization_ratio(examples, count_method=args.count_method)
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
     min_frequency = args.min_frequency
@@ -238,12 +247,12 @@ def main(args: argparse.Namespace) -> None:
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
 
+    """
     logger.info("Plot approximate memorization ratio.")
     path = output_dir / "approximate_memorization_ratio.png"
     fig = plot_approximate_memorization_ratio(examples)
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
-
     logger.info(f"Plot bleu with frequency in [{min_frequency}, {max_frequency}].")
     path = output_dir / f"approximate_memorization_ratio_{min_frequency}_{max_frequency}.png"
     fig = plot_approximate_memorization_ratio(
@@ -251,9 +260,11 @@ def main(args: argparse.Namespace) -> None:
         min_frequency=min_frequency,
         max_frequency=max_frequency,
         least_num_examples_per_grid=args.least_num_examples_per_grid,
+        count_method=args.count_method,
     )
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
+    """
 
 if __name__ == "__main__":
     args = parse_args()
