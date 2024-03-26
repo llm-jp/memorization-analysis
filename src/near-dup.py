@@ -11,8 +11,8 @@ import plotly.graph_objs as go
 
 for dir_idx in range(10):
     for path_idx in range(12):
-        merged_path = Path(f"/model/i-sugiura/memorization-analysis/llm-jp/near-dup/merged/used_data_0{dir_idx}/used_data_{path_idx}.jsonl.gz")
-        result_path = Path(f"/model/i-sugiura/memorization-analysis/llm-jp/result13B/used_data_0{dir_idx}/used_data_{path_idx}.jsonl.gz")
+        merged_path = Path(f"/model/i-sugiura/memorization-analysis/llm-jp/near-dup/threshold_0.6/merged/used_data_0{dir_idx}/used_data_{path_idx}.jsonl.gz")
+        result_path = Path(f"/model/i-sugiura/memorization-analysis/llm-jp/result1.3B/used_data_0{dir_idx}/used_data_{path_idx}.jsonl.gz")
         # Load json line files
         with gzip.open(merged_path, "rt") as f:
             merged = [json.loads(line) for line in f]

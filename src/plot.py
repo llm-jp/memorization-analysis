@@ -243,6 +243,7 @@ def main(args: argparse.Namespace) -> None:
         max_frequency=max_frequency,
         least_num_examples_per_grid=args.least_num_examples_per_grid,
         heatmap_zmax=args.zmax,
+        count_method=args.count_method,
     )
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
