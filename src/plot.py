@@ -81,7 +81,7 @@ def plot_verbatim_memorization_ratio(
     max_frequency: int = 999_999_999_999,
     least_num_examples_per_grid: int = 1,
     heatmap_zmax: float = 1,
-    count_method: str = "count", # or "near_dup_count"
+    count_method: str = "count",  # or "near_dup_count"
 ) -> go.Figure:
     """Plot the verbatim memorization ratio.
 
@@ -151,7 +151,7 @@ def plot_approximate_memorization_ratio(
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
     least_num_examples_per_grid: int = 1,
-    count_method: str = "count", # or "near_dup_count"
+    count_method: str = "count",  # or "near_dup_count"
 ) -> go.Figure:
     """Plot the approximate memorization ratio.
 
@@ -266,6 +266,7 @@ def main(args: argparse.Namespace) -> None:
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
     """
+
 
 if __name__ == "__main__":
     args = parse_args()

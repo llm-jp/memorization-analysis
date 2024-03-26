@@ -1,22 +1,15 @@
-import json
-import gzip
-import os
-import numpy as np
-from transformers import AutoTokenizer
-
-
-from utils.mmap_dataset import MMapIndexedDataset
-from tqdm import trange
-import numpy as np
 import argparse
+import concurrent.futures
+import gzip
+import json
+import logging
 import os
 
-import concurrent.futures
+from tqdm import trange
+from transformers import AutoTokenizer
+from utils.mmap_dataset import MMapIndexedDataset
 
-import logging
 logger = logging.getLogger(__name__)
-
-
 
 
 parser = argparse.ArgumentParser(
@@ -25,52 +18,31 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument(
     "--load_path",
-    type = str,
-    default = '/mnt/ssd-1/pile_preshuffled/standard/document',
-    help = ("MMap dataset path with .bin and .idx files. Omit the .bin (or) .idx "
-            "Extension while specifying the path")
-)
-parser.add_argument(
-    "--save_path",
     type=str,
-    default="token_indicies",
-    help="Save path for files"
+    default="/mnt/ssd-1/pile_preshuffled/standard/document",
+    help=("MMap dataset path with .bin and .idx files. Omit the .bin (or) .idx " "Extension while specifying the path"),
 )
-parser.add_argument(
-    "--base_file",
-    type=int,
-    default=0,
-    help="Base file"
-)
+parser.add_argument("--save_path", type=str, default="token_indicies", help="Save path for files")
+parser.add_argument("--base_file", type=int, default=0, help="Base file")
 
-parser.add_argument(
-    "--end_file",
-    type=int,
-    default=143,
-    help="End file"
-)
+parser.add_argument("--end_file", type=int, default=143, help="End file")
 
-parser.add_argument(
-    "--verbose",
-    action="store_true",
-    help="Print debug level logs"
-)
+parser.add_argument("--verbose", action="store_true", help="Print debug level logs")
 
-parser.add_argument(
-    "--num_processes",
-    type=int,
-    default=48,
-    help="Number of processes"
-)
+parser.add_argument("--num_processes", type=int, default=48, help="Number of processes")
 
 
 def process(file_idx):
-    pythia_data_path = "/model/i-sugiura/datasets--EleutherAI--pile-standard-pythia-preshuffled/snapshots/merged/document"
+    pythia_data_path = (
+        "/model/i-sugiura/datasets--EleutherAI--pile-standard-pythia-preshuffled/snapshots/merged/document"
+    )
     llm_jp_output_dir = "/model/i-sugiura/datasets--EleutherAI--pile-standard-pythia-preshuffled/snapshots/converted"
     convert_to_llm_jp_format(pythia_data_path, llm_jp_output_dir, file_idx)
     logger.info(f"Finished processing file {file_idx}")
 
+
 # 143 files
+
 
 def convert_to_llm_jp_format(pythia_data_path, llm_jp_output_dir, file_idx):
     # Create output directory if not exists
@@ -81,16 +53,16 @@ def convert_to_llm_jp_format(pythia_data_path, llm_jp_output_dir, file_idx):
         revision="step3000",
         cache_dir="/model/i-sugiura/pythia-14m/step3000",
     )
-    dataset = MMapIndexedDataset(pythia_data_path, skip_warmup = True)
+    dataset = MMapIndexedDataset(pythia_data_path, skip_warmup=True)
     print(len(dataset))
     steps_per_file = 1000
     i = file_idx
     path = os.path.join(llm_jp_output_dir, f"pythia-{i*steps_per_file:05d}-{(i+1)*steps_per_file-1:05d}.jsonl.gz")
-    with gzip.open(path, 'wt', encoding='utf-8') as output_file:
+    with gzip.open(path, "wt", encoding="utf-8") as output_file:
         for j in trange(steps_per_file):
             iteration = i * steps_per_file + j
             # TODO: end is (iteration+1)*1024 + 1 ? or not?
-            batch = dataset[iteration*1024: (iteration+1)*1024]
+            batch = dataset[iteration * 1024 : (iteration + 1) * 1024]
             for data in batch:
                 text = tokenizer.decode(data)
                 token_ids = data.tolist()
@@ -100,7 +72,7 @@ def convert_to_llm_jp_format(pythia_data_path, llm_jp_output_dir, file_idx):
                     "dataset_name": "pile",
                     "doc_ids": [0],
                     "text": text,
-                    "token_ids": token_ids
+                    "token_ids": token_ids,
                 }
                 output_file.write(json.dumps(formatted_data, ensure_ascii=False))
                 # output_file.write("\n")
@@ -108,7 +80,6 @@ def convert_to_llm_jp_format(pythia_data_path, llm_jp_output_dir, file_idx):
 
 
 if __name__ == "__main__":
-
     args = parser.parse_args()
 
     max_files = args.end_file
@@ -122,4 +93,3 @@ if __name__ == "__main__":
     with concurrent.futures.ProcessPoolExecutor(max_processes) as executor:
         for i in range(min_files, max_files):
             executor.submit(process, i)
-
