@@ -50,6 +50,17 @@ MODEL_NAME_OR_PATH=<MODEL-NAME-OR-PATH>
 python src/evaluate.py --data_dir $PATH_TO_ANNOTATE_DIR --output_dir $PATH_TO_RESULT_DIR --model_name_or_path $MODEL_NAME_OR_PATH
 ```
 
+- Merge the near-dup-count to the result.
+```bash
+ python3 src/merge-near-dup-pythia.py --threshold 0.8 --model_siz
+e 12b
+```
+
+```bash
+python src/merge_near_dup_count.py --data_dir $PATH_TO_RESULT_DIR
+```
+
+
 Visualize the results.
 
 ```bash
