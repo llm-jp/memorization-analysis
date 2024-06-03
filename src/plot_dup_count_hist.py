@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 import click
+import numpy as np
 
 
 @click.command()
@@ -41,23 +42,27 @@ def main(threshold, dataset):
 
     count_dict = Counter(near_count_list)
     print(count_dict)
+    print("most_frequent near_dup_count", count_dict.most_common(10))
+    print("most_frequent exact_dup_count", Counter(exact_count_list).most_common(10))
     print(sum([v for k, v in count_dict.items() if k != 0]))
-    plt.hist(near_count_list, bins=[0, 1, 10, 100, 1000, 10000, 100000], log=True)
+    plt.hist(near_count_list, bins=np.logspace(0, 5, 20), log=True, ec="black", alpha=0.5)
     plt.xscale("log")
     plt.title("near_dup_count histogram")
-    plt.xlabel("near_dup_count")
-    plt.ylabel("count")
+    plt.xlabel("Number of Near Duplicates in Training Data")
+    plt.ylabel("Count")
+    plt.grid(linestyle="--")
     dir = f"{dataset}/{threshold}"
     os.makedirs(dir, exist_ok=True)
     plt.savefig(os.path.join(dir, "near_dup_count_hist.png"))
     plt.show()
     plt.clf()
 
-    plt.hist(exact_count_list, bins=[0, 1, 10, 100, 1000, 10000, 100000], log=True)
+    plt.hist(exact_count_list, bins=np.logspace(0, 5, 20), log=True, ec="black", alpha=0.5)
     plt.xscale("log")
     plt.title("exact_dup_count histogram")
-    plt.xlabel("exact_dup_count")
-    plt.ylabel("count")
+    plt.xlabel("Number of Exact Duplicates in Training Data")
+    plt.ylabel("Count")
+    plt.grid(linestyle="--")
     plt.savefig(os.path.join(dir, "exact_dup_count_hist.png"))
     plt.show()
 
