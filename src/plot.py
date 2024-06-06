@@ -95,6 +95,7 @@ def plot_verbatim_memorization_ratio(
     Returns:
         go.Figure: The plotly figure.
     """
+
     step_examples_map = defaultdict(list)
     for example in examples:
         iteration = example.completion_stats["last_iteration"]
@@ -120,7 +121,7 @@ def plot_verbatim_memorization_ratio(
             memorization_ratio = sum([e.metrics[key] for e in examples]) / len(examples)
             row.append(memorization_ratio)
         z.append(row)
-
+    # print(z)
     z_max = np.nanmax([np.nanmax(row) for row in z])
     logger.debug(f"z_max = {z_max:.3f}")
     z_min = np.nanmin([np.nanmin(row) for row in z])
@@ -248,7 +249,6 @@ def main(args: argparse.Namespace) -> None:
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
 
-    """
     logger.info("Plot approximate memorization ratio.")
     path = output_dir / "approximate_memorization_ratio.png"
     fig = plot_approximate_memorization_ratio(examples)
@@ -265,7 +265,6 @@ def main(args: argparse.Namespace) -> None:
     )
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
-    """
 
 
 if __name__ == "__main__":

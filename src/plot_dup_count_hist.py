@@ -24,7 +24,6 @@ def main(threshold, dataset):
         files = list(result_path.glob("used_data_*/used_data_*.jsonl.gz"))
     else:
         files = list(result_path.glob("*.jsonl.gz"))
-    print(files)
     near_count_list = []
     exact_count_list = []
     for file in files:
@@ -41,10 +40,8 @@ def main(threshold, dataset):
     import matplotlib.pyplot as plt
 
     count_dict = Counter(near_count_list)
-    print(count_dict)
     print("most_frequent near_dup_count", count_dict.most_common(10))
     print("most_frequent exact_dup_count", Counter(exact_count_list).most_common(10))
-    print(sum([v for k, v in count_dict.items() if k != 0]))
     plt.hist(near_count_list, bins=np.logspace(0, 5, 20), log=True, ec="black", alpha=0.5)
     plt.xscale("log")
     plt.title("near_dup_count histogram")
