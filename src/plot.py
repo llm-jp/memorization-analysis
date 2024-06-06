@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--least_num_examples_per_grid",
         type=int,
-        default=1,
+        default=10,
         help="The minimum number of examples to plot.",
     )
     parser.add_argument(
@@ -79,7 +79,7 @@ def plot_verbatim_memorization_ratio(
     metric_key: str = "extractable",
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
-    least_num_examples_per_grid: int = 1,
+    least_num_examples_per_grid: int = 10,
     heatmap_zmax: float = 1,
     count_method: str = "count",  # or "near_dup_count"
 ) -> go.Figure:
@@ -113,7 +113,7 @@ def plot_verbatim_memorization_ratio(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if min_frequency <= example.completion_stats[count_method] <= max_frequency:
+                if min_frequency <= example.completion_stats[count_method] < max_frequency:
                     examples.append(example)
             if len(examples) < least_num_examples_per_grid:
                 row.append(np.nan)
@@ -137,10 +137,20 @@ def plot_verbatim_memorization_ratio(
             zmax=np.nanmax((z_max, heatmap_zmax)),
         )
     )
+    print(list(range(0, steps[-1], 10000)))
     fig.update_layout(
-        title=f"Verbatim memorization ratio over training steps(frequency: {min_frequency} - {max_frequency})",
         xaxis_title="Training steps",
         yaxis_title="Sequence length",
+        # 全ての文字サイズ 大, x軸は1000単位で表示
+        xaxis = dict(
+            tickfont = dict(size=20),
+            tickvals = list(range(0, steps[-1]+1, 10000)),
+        ),
+        yaxis = dict(
+            tickfont = dict(size=20),
+        ),
+        # heatmapの文字サイズ
+        font = dict(size=20),
     )
     return fig
 
@@ -184,7 +194,7 @@ def plot_approximate_memorization_ratio(
         for step in steps:
             examples = []
             for example in step_examples_map[step]:
-                if min_frequency <= example.completion_stats[count_method] <= max_frequency:
+                if min_frequency <= example.completion_stats[count_method] < max_frequency:
                     examples.append(example)
             if len(examples) < least_num_examples_per_grid:
                 row.append(np.nan)
@@ -208,9 +218,18 @@ def plot_approximate_memorization_ratio(
         )
     )
     fig.update_layout(
-        title=f"Approximate memorization ratio over training steps(frequency: {min_frequency} - {max_frequency})",
         xaxis_title="Training steps",
         yaxis_title="Sequence length",
+        # 全ての文字サイズ 大, x軸は1000単位で表示
+        xaxis = dict(
+            tickfont = dict(size=20),
+            tickvals = list(range(0, steps[-1]+1, 10000)),
+        ),
+        yaxis = dict(
+            tickfont = dict(size=20),
+        ),
+        # heatmapの文字サイズ
+        font = dict(size=20),
     )
     return fig
 
@@ -228,16 +247,16 @@ def main(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Plot verbatim memorization ratio.")
-    path = output_dir / "verbatim_memorization_ratio.png"
-    fig = plot_verbatim_memorization_ratio(examples, count_method=args.count_method)
-    fig.write_image(path)
-    logger.info(f"Saved to {path}.")
+    #logger.info("Plot verbatim memorization ratio.")
+    #path = output_dir / "verbatim_memorization_ratio.png"
+    #fig = plot_verbatim_memorization_ratio(examples, count_method=args.count_method)
+    #fig.write_image(path)
+    #logger.info(f"Saved to {path}.")
     min_frequency = args.min_frequency
     max_frequency = args.max_frequency
 
     logger.info(f"Plot extractable with frequency in [{min_frequency}, {max_frequency}].")
-    path = output_dir / f"verbatim_memorization_ratio_{min_frequency}_{max_frequency}.png"
+    path = output_dir / f"verbatim_memorization_ratio.png"
     fig = plot_verbatim_memorization_ratio(
         examples,
         min_frequency=min_frequency,
@@ -249,13 +268,13 @@ def main(args: argparse.Namespace) -> None:
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
 
-    logger.info("Plot approximate memorization ratio.")
-    path = output_dir / "approximate_memorization_ratio.png"
-    fig = plot_approximate_memorization_ratio(examples)
-    fig.write_image(path)
-    logger.info(f"Saved to {path}.")
-    logger.info(f"Plot bleu with frequency in [{min_frequency}, {max_frequency}].")
-    path = output_dir / f"approximate_memorization_ratio_{min_frequency}_{max_frequency}.png"
+    #logger.info("Plot approximate memorization ratio.")
+    #path = output_dir / "approximate_memorization_ratio.png"
+    #fig = plot_approximate_memorization_ratio(examples)
+    #fig.write_image(path)
+    #logger.info(f"Saved to {path}.")
+    #logger.info(f"Plot bleu with frequency in [{min_frequency}, {max_frequency}].")
+    path = output_dir / f"approximate_memorization_ratio.png"
     fig = plot_approximate_memorization_ratio(
         examples,
         min_frequency=min_frequency,

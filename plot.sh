@@ -1,15 +1,27 @@
-threshold=1.0
-model_size="12b"
+# 変数の設定
+model_name="llm-jp"
+model_size="13B"
+count_method="count" # "near_dup_count" or "count"
+min_list=(1 2 10 100 1000)
+max_list=(2 10 100 1000 10000)
+# z_list=(0.03 0.02 0.4 0.8) # for pythia "count"
+z_list=(0.2 0.2 0.01 0.1) # for llm-jp
 
+# for
+for i in {0..4}
+do
+    min_frequency=${min_list[$i]}
+    max_frequency=${max_list[$i]}
+    z_max=${z_list[$i]}
+    data_dir="/model/i-sugiura/memorization-analysis/${model_name}/result${model_size}"
+    output_dir="${model_name}/memorization/${model_size}/${count_method}/${min_frequency}-${max_frequency}"
 
-#PATH_TO_RESULT_DIR="/model/i-sugiura/memorization-analysis/llm-jp/result1.3B"
-#PATH_TO_PLOT_DIR="llm-jp/plot1.3B-near-dup-0.6"
-
-PATH_TO_RESULT_DIR="/model/i-sugiura/memorization-analysis/pythia/result${model_size}"
-PATH_TO_PLOT_DIR="pythia/plot${model_size}-near-dup-${threshold}"
-
-python3.10 src/plot.py --data_dir "/model/i-sugiura/memorization-analysis/llm-jp/result1.3B/threshold_1.0" --output_dir "llm-jp/plot1.3B-near-dup-1.0" --min_frequency 0 --
-max_frequency 1 --zmax 0.03 --count_method "count"
-
-# python3 src/plot.py --data_dir $PATH_TO_RESULT_DIR --output_dir $PATH_TO_PLOT_DIR
-python3.10 src/plot.py --data_dir "/model/i-sugiura/memorization-analysis/pythia/result12b" --output_dir "pythia/plot12b-near-dup-1.0" --min_frequency 0 --max_frequency 1 --zmax 0.03 --count_method "count"
+    # Pythonスクリプトの実行
+    python3.10 src/plot.py \
+        --data_dir "$data_dir" \
+        --output_dir "$output_dir" \
+        --min_frequency "$min_frequency" \
+        --max_frequency "$max_frequency" \
+        --zmax "$z_max" \
+        --count_method "$count_method"
+done
