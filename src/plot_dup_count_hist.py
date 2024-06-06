@@ -44,10 +44,12 @@ def main(threshold, dataset):
     print("most_frequent exact_dup_count", Counter(exact_count_list).most_common(10))
     plt.hist(near_count_list, bins=np.logspace(0, 5, 20), log=True, ec="black", alpha=0.5)
     plt.xscale("log")
-    plt.title("near_dup_count histogram")
-    plt.xlabel("Number of Near Duplicates in Training Data")
-    plt.ylabel("Count")
+    plt.xlabel("Number of Near Duplicates in Training Data", fontsize=18)
+    plt.ylabel("Count", fontsize=18)
     plt.grid(linestyle="--")
+    plt.tick_params(labelsize=18)
+    plt.tight_layout()
+
     dir = f"{dataset}/{threshold}"
     os.makedirs(dir, exist_ok=True)
     plt.savefig(os.path.join(dir, "near_dup_count_hist.png"))
@@ -56,10 +58,11 @@ def main(threshold, dataset):
 
     plt.hist(exact_count_list, bins=np.logspace(0, 5, 20), log=True, ec="black", alpha=0.5)
     plt.xscale("log")
-    plt.title("exact_dup_count histogram")
-    plt.xlabel("Number of Exact Duplicates in Training Data")
-    plt.ylabel("Count")
+    plt.xlabel("Number of Exact Duplicates in Training Data", fontsize=18)
+    plt.ylabel("Count", fontsize=18)
     plt.grid(linestyle="--")
+    plt.tick_params(labelsize=18)
+    plt.tight_layout()
     plt.savefig(os.path.join(dir, "exact_dup_count_hist.png"))
     plt.show()
 

@@ -13,7 +13,7 @@ model_size = "12b"
 
 
 @click.command()
-@click.option("--threshold", default=0.8)
+@click.option("--threshold", default=0.6)
 @click.option("--model_size", default="12b")
 def main(threshold, model_size):
     DIR = f"/model/i-sugiura/memorization-analysis/pythia/near-dup/threshold_{threshold}/merged/"

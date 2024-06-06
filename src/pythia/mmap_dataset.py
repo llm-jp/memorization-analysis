@@ -17,7 +17,6 @@
 #   the dataset are always of sequence length 2049
 
 import os
-import shutil
 import struct
 from functools import lru_cache
 from itertools import accumulate
@@ -36,12 +35,14 @@ dtypes = {
     8: np.uint16,
 }
 
+
 def index_file_path(prefix_path):
     return prefix_path + ".idx"
 
 
 def data_file_path(prefix_path):
     return prefix_path + ".bin"
+
 
 class MMapIndexedDataset(torch.utils.data.Dataset):
     class Index(object):
@@ -100,8 +101,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
             with open(path, "rb") as stream:
                 magic_test = stream.read(9)
                 assert self._HDR_MAGIC == magic_test, (
-                    "Index file doesn't match expected format. "
-                    "Make sure that --dataset-impl is configured properly."
+                    "Index file doesn't match expected format. " "Make sure that --dataset-impl is configured properly."
                 )
                 # Little endian unsigned 64 Bit integer
                 version = struct.unpack("<Q", stream.read(8))
@@ -123,9 +123,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
             self._bin_buffer_mmap = np.memmap(path, mode="r", order="C")
             self._bin_buffer = memoryview(self._bin_buffer_mmap)
             print("    reading sizes...")
-            self._sizes = np.frombuffer(
-                self._bin_buffer, dtype=np.int32, count=self._len, offset=offset
-            )
+            self._sizes = np.frombuffer(self._bin_buffer, dtype=np.int32, count=self._len, offset=offset)
             print("    reading pointers...")
             self._pointers = np.frombuffer(
                 self._bin_buffer,
@@ -190,9 +188,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
             print("    warming up data mmap file...")
             _warmup_mmap_file(data_file_path(self._path))
         print("    creating numpy buffer of mmap...")
-        self._bin_buffer_mmap = np.memmap(
-            data_file_path(self._path), mode="r", order="C"
-        )
+        self._bin_buffer_mmap = np.memmap(data_file_path(self._path), mode="r", order="C")
         print("    creating memory view of numpy buffer...")
         self._bin_buffer = memoryview(self._bin_buffer_mmap)
 
@@ -208,9 +204,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         if isinstance(idx, int):
             ptr, size = self._index[idx]
-            np_array = np.frombuffer(
-                self._bin_buffer, dtype=self._index.dtype, count=size, offset=ptr
-            )
+            np_array = np.frombuffer(self._bin_buffer, dtype=self._index.dtype, count=size, offset=ptr)
             return np_array
         elif isinstance(idx, slice):
             start, stop, step = idx.indices(len(self))
@@ -220,9 +214,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
             sizes = self._index._sizes[idx]
             offsets = list(accumulate(sizes))
             total_size = sum(sizes)
-            np_array = np.frombuffer(
-                self._bin_buffer, dtype=self._index.dtype, count=total_size, offset=ptr
-            )
+            np_array = np.frombuffer(self._bin_buffer, dtype=self._index.dtype, count=total_size, offset=ptr)
             return np_array.reshape(-1, 2049)
 
     def get(self, idx, offset=0, length=None):
@@ -235,9 +227,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         if length is None:
             length = size - offset
         ptr += offset * np.dtype(self._index.dtype).itemsize
-        np_array = np.frombuffer(
-            self._bin_buffer, dtype=self._index.dtype, count=length, offset=ptr
-        )
+        np_array = np.frombuffer(self._bin_buffer, dtype=self._index.dtype, count=length, offset=ptr)
         return np_array
 
     @property
@@ -260,6 +250,4 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
 
     @staticmethod
     def exists(path):
-        return os.path.exists(index_file_path(path)) and os.path.exists(
-            data_file_path(path)
-        )
+        return os.path.exists(index_file_path(path)) and os.path.exists(data_file_path(path))

@@ -1,16 +1,16 @@
-import click
-import matplotlib.pyplot as plt
-
-from pathlib import Path
 import gzip
 import json
 from collections import defaultdict
+from pathlib import Path
+
+import click
+import matplotlib.pyplot as plt
 import numpy as np
+
 
 @click.command()
 @click.option("--model_name", default="pythia")
 @click.option("--model_size", default="12b")
-
 def main(model_name, model_size):
     data_dir = f"/model/i-sugiura/memorization-analysis/{model_name}/result{model_size}"
     data_dir = Path(data_dir)
@@ -19,7 +19,7 @@ def main(model_name, model_size):
     path_list = data_dir.glob("**/*.jsonl.gz")
     path_list = sorted(path_list)
     # only ten files
-    #path_list = path_list[:50]
+    # path_list = path_list[:50]
     for path in path_list:
         with gzip.open(path, "rt") as f:
             for i, line in enumerate(f):
@@ -36,11 +36,9 @@ def main(model_name, model_size):
     # plot exact duplication 1, 2-9, 10-100, 100-1000, 1000-10000 memorization ratio
     range_list = [1, 2, 10, 100, 1000, 10000]
 
-
     count_methods = ["exact_duplication", "near_duplication"]
 
     for count_method in count_methods:
-
         for prefix_length in [100, 200, 500, 1000]:
             ratio_list = [[] for _ in range(len(range_list) - 1)]
             for example in examples:
@@ -49,7 +47,6 @@ def main(model_name, model_size):
                         idx = range_list.index(end) - 1
                         ratio_list[idx].append(example["verbatim"][prefix_length])
                         break
-
 
             verbatim_mem_ratio_list = [sum(ratio) / len(ratio) for ratio in ratio_list]
             plt.plot(np.arange(1, 6), verbatim_mem_ratio_list, label=f"{prefix_length}")
@@ -77,7 +74,6 @@ def main(model_name, model_size):
                             ratio_list[idx].append(example["approximate"][prefix_length])
                             break
 
-
                 mem_ratio_list = [sum(ratio) / len(ratio) for ratio in ratio_list]
                 plt.plot(np.arange(1, 6), mem_ratio_list, label=f"{prefix_length}")
             if count_method == "exact_duplication":
@@ -94,7 +90,6 @@ def main(model_name, model_size):
             plt.show()
             plt.clf()
 
-
         plt.bar(np.arange(1, 6), [len(ratio) for ratio in ratio_list])
         if count_method == "exact_duplication":
             plt.xlabel("Exact duplication", fontsize=16)
@@ -108,7 +103,6 @@ def main(model_name, model_size):
         plt.savefig(f"{model_name}/memorization/{model_size}/{count_method}_num.png")
         plt.show()
         plt.clf()
-
 
 
 if __name__ == "__main__":

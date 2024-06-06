@@ -1,11 +1,11 @@
 # 変数の設定
-model_name="llm-jp"
-model_size="13B"
-count_method="count" # "near_dup_count" or "count"
+model_name="pythia"
+model_size="12b"
+count_method="near_dup_count" # "near_dup_count" or "count"
 min_list=(1 2 10 100 1000)
 max_list=(2 10 100 1000 10000)
 # z_list=(0.03 0.02 0.4 0.8) # for pythia "count"
-z_list=(0.2 0.2 0.01 0.1) # for llm-jp
+z_list=(0.2 0.2 0.2 0.1) # for llm-jp
 
 # for
 for i in {0..4}
