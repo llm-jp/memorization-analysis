@@ -9,8 +9,8 @@ import numpy as np
 
 
 @click.command()
-@click.option("--model_name", default="pythia")
-@click.option("--model_size", default="12b")
+@click.option("--model_name", default="llm-jp")
+@click.option("--model_size", default="13B")
 def main(model_name, model_size):
     data_dir = f"/model/i-sugiura/memorization-analysis/{model_name}/result{model_size}"
     data_dir = Path(data_dir)
@@ -47,9 +47,14 @@ def main(model_name, model_size):
                         idx = range_list.index(end) - 1
                         ratio_list[idx].append(example["verbatim"][prefix_length])
                         break
+            sum_list = [sum(ratio) for ratio in ratio_list]
+            # formta "23 & 34 & 45 & 56 & 67"
+            print(f"{prefix_length} : {' & '.join([str(int(sum_)) for sum_ in sum_list])} \\\\")
+            count_list = [len(ratio) for ratio in ratio_list]
+            print(f"{prefix_length} : {' & '.join([str(int(count)) for count in count_list])} \\\\")
 
-            verbatim_mem_ratio_list = [sum(ratio) / len(ratio) for ratio in ratio_list]
-            plt.plot(np.arange(1, 6), verbatim_mem_ratio_list, label=f"{prefix_length}")
+            mem_ratio_list = [sum(ratio) / len(ratio) for ratio in ratio_list]
+            plt.plot(np.arange(1, 6), mem_ratio_list, label=f"{prefix_length}")
         if count_method == "exact_duplication":
             plt.xlabel("Exact duplication", fontsize=16)
         else:
@@ -73,7 +78,8 @@ def main(model_name, model_size):
                             idx = range_list.index(end) - 1
                             ratio_list[idx].append(example["approximate"][prefix_length])
                             break
-
+                # #print(f"prefix_length: {prefix_length}, mem distribution: {[sum(ratio) for ratio in ratio_list]}")
+                # print(f"prefix_length: {prefix_length}, mem distribution: {[len(ratio) for ratio in ratio_list]}")
                 mem_ratio_list = [sum(ratio) / len(ratio) for ratio in ratio_list]
                 plt.plot(np.arange(1, 6), mem_ratio_list, label=f"{prefix_length}")
             if count_method == "exact_duplication":

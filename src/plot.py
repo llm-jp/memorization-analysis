@@ -9,7 +9,6 @@ from utils import PREFIX_LENGTHS, Example, load_examples
 
 logger = logging.getLogger(__name__)
 
-FREQUENCY_BINS = [0, 1, 10, 100, 1_000, 10_000]
 
 STEP_INTERVAL = 5_000
 
@@ -36,7 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--least_num_examples_per_grid",
         type=int,
-        default=10,
+        default=20,
         help="The minimum number of examples to plot.",
     )
     parser.add_argument(
@@ -79,7 +78,7 @@ def plot_verbatim_memorization_ratio(
     metric_key: str = "extractable",
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
-    least_num_examples_per_grid: int = 10,
+    least_num_examples_per_grid: int = 20,
     heatmap_zmax: float = 1,
     count_method: str = "count",  # or "near_dup_count"
 ) -> go.Figure:
@@ -119,8 +118,10 @@ def plot_verbatim_memorization_ratio(
                 row.append(np.nan)
                 continue
             memorization_ratio = sum([e.metrics[key] for e in examples]) / len(examples)
+            #memorization_ratio = sum([e.metrics[key] for e in examples])
             row.append(memorization_ratio)
         z.append(row)
+
     # print(z)
     z_max = np.nanmax([np.nanmax(row) for row in z])
     logger.debug(f"z_max = {z_max:.3f}")
@@ -161,7 +162,7 @@ def plot_approximate_memorization_ratio(
     threshold: float = 0.75,
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
-    least_num_examples_per_grid: int = 1,
+    least_num_examples_per_grid: int = 20,
     count_method: str = "count",  # or "near_dup_count"
 ) -> go.Figure:
     """Plot the approximate memorization ratio.
@@ -247,11 +248,7 @@ def main(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # logger.info("Plot verbatim memorization ratio.")
-    # path = output_dir / "verbatim_memorization_ratio.png"
-    # fig = plot_verbatim_memorization_ratio(examples, count_method=args.count_method)
-    # fig.write_image(path)
-    # logger.info(f"Saved to {path}.")
+
     min_frequency = args.min_frequency
     max_frequency = args.max_frequency
 
@@ -268,12 +265,6 @@ def main(args: argparse.Namespace) -> None:
     fig.write_image(path)
     logger.info(f"Saved to {path}.")
 
-    # logger.info("Plot approximate memorization ratio.")
-    # path = output_dir / "approximate_memorization_ratio.png"
-    # fig = plot_approximate_memorization_ratio(examples)
-    # fig.write_image(path)
-    # logger.info(f"Saved to {path}.")
-    # logger.info(f"Plot bleu with frequency in [{min_frequency}, {max_frequency}].")
     path = output_dir / "approximate_memorization_ratio.png"
     fig = plot_approximate_memorization_ratio(
         examples,
