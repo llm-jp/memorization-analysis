@@ -127,13 +127,13 @@ def plot_verbatim_memorization_ratio(
     logger.debug(f"z_max = {z_max:.3f}")
     z_min = np.nanmin([np.nanmin(row) for row in z])
     logger.debug(f"z_min = {z_min:.3f}")
-
+    print("verbatim zmax", z_max)
     fig = go.Figure()
     fig.add_trace(
         go.Heatmap(
             z=z,
             x=list(map(str, steps)),
-            y=list(map(str, PREFIX_LENGTHS)),
+            y=["50", "150", "450", "950"],
             zmin=0.0,
             zmax=np.nanmax((z_max, heatmap_zmax)),
         )
@@ -141,7 +141,7 @@ def plot_verbatim_memorization_ratio(
     print(list(range(0, steps[-1], 10000)))
     fig.update_layout(
         xaxis_title="Training steps",
-        yaxis_title="Sequence length",
+        yaxis_title="Prefix length",
         # 全ての文字サイズ 大, x軸は1000単位で表示
         xaxis=dict(
             tickfont=dict(size=20),
@@ -163,6 +163,7 @@ def plot_approximate_memorization_ratio(
     min_frequency: int = 0,
     max_frequency: int = 999_999_999_999,
     least_num_examples_per_grid: int = 20,
+    heatmap_zmax: float = 1,
     count_method: str = "count",  # or "near_dup_count"
 ) -> go.Figure:
     """Plot the approximate memorization ratio.
@@ -205,6 +206,7 @@ def plot_approximate_memorization_ratio(
         z.append(row)
 
     z_max = np.nanmax([np.nanmax(row) for row in z])
+    print("approximate zmax", z_max)
     logger.debug(f"z_max = {z_max:.3f}")
     z_min = np.nanmin([np.nanmin(row) for row in z])
     logger.debug(f"z_min = {z_min:.3f}")
@@ -214,13 +216,14 @@ def plot_approximate_memorization_ratio(
         go.Heatmap(
             z=z,
             x=list(map(str, steps)),
-            y=list(map(str, PREFIX_LENGTHS)),
+            y=["50", "150", "450", "950"],
             zmin=0.0,
+            zmax=np.nanmax((z_max, heatmap_zmax)),
         )
     )
     fig.update_layout(
         xaxis_title="Training steps",
-        yaxis_title="Sequence length",
+        yaxis_title="Prefix length",
         # 全ての文字サイズ 大, x軸は1000単位で表示
         xaxis=dict(
             tickfont=dict(size=20),
@@ -271,6 +274,7 @@ def main(args: argparse.Namespace) -> None:
         min_frequency=min_frequency,
         max_frequency=max_frequency,
         least_num_examples_per_grid=args.least_num_examples_per_grid,
+        heatmap_zmax=args.zmax,
         count_method=args.count_method,
     )
     fig.write_image(path)

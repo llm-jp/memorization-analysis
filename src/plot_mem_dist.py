@@ -54,7 +54,7 @@ def main(model_name, model_size):
             print(f"{prefix_length} : {' & '.join([str(int(count)) for count in count_list])} \\\\")
 
             mem_ratio_list = [sum(ratio) / len(ratio) for ratio in ratio_list]
-            plt.plot(np.arange(1, 6), mem_ratio_list, label=f"{prefix_length}")
+            plt.plot(np.arange(1, 6), mem_ratio_list, label=f"{prefix_length-50}")
         if count_method == "exact_duplication":
             plt.xlabel("Exact duplication", fontsize=16)
         else:
@@ -81,7 +81,7 @@ def main(model_name, model_size):
                 # #print(f"prefix_length: {prefix_length}, mem distribution: {[sum(ratio) for ratio in ratio_list]}")
                 # print(f"prefix_length: {prefix_length}, mem distribution: {[len(ratio) for ratio in ratio_list]}")
                 mem_ratio_list = [sum(ratio) / len(ratio) for ratio in ratio_list]
-                plt.plot(np.arange(1, 6), mem_ratio_list, label=f"{prefix_length}")
+                plt.plot(np.arange(1, 6), mem_ratio_list, label=f"{prefix_length-50}")
             if count_method == "exact_duplication":
                 plt.xlabel("Exact duplication", fontsize=16)
             else:

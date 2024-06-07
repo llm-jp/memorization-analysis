@@ -2,10 +2,10 @@
 model_name="pythia"
 model_size="12b"
 count_method="near_dup_count" # "near_dup_count" or "count"
-min_list=(1  10 100 )
-max_list=(10  100 1000 )
+min_list=(1  11 )
+max_list=(11  101 )
 # z_list=(0.03 0.02 0.4 0.8) # for pythia "count"
-z_list=(0.2 0.2 0.01 0.03 0.2 0.1) # for llm-jp
+z_list=(0.43478260869565216 0.43478260869565216) # for llm-jp
 
 # for
 for i in {0..4}
